@@ -1,9 +1,15 @@
-﻿import React, { useState } from 'react';
-import { View, StyleSheet, Text, TextInput, TouchableOpacity, ScrollView } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import React, { useState } from 'react';
+import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
+import { Check, Lock, Mail } from 'lucide-react-native';
 import { RootStackParamList } from '../navigation/types';
+import { AppHeader } from '../components/AppHeader';
+import { PrimaryButton } from '../components/PrimaryButton';
+import { Screen } from '../components/Screen';
+import { TextField } from '../components/TextField';
 import { colors } from '../theme/colors';
+import { spacing } from '../theme/spacing';
+import { typography } from '../theme/typography';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'SignUp'>;
 
@@ -11,164 +17,126 @@ export default function SignUpScreen({ navigation }: Props) {
   const [identifier, setIdentifier] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
+  const [agreed, setAgreed] = useState(false);
 
   return (
-    <SafeAreaView style={styles.container}>
-      <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
-        <View style={styles.topNav}>
-          <TouchableOpacity onPress={() => navigation.goBack()}>
-            <Text style={styles.backBtn}>‹ KEMBALI</Text>
-          </TouchableOpacity>
-        </View>
+    <Screen scroll>
+      <AppHeader title="Daftar ke Vehigo" onBack={() => navigation.goBack()} />
 
-        <View style={styles.header}>
-          <Text style={styles.title}>Selamat datang di Vehigo</Text>
-          <Text style={styles.subtitle}>
-            Dari Pilihan ke Perjalanan, Semua dalam Genggaman. Daftar Sekarang!
+      <View style={styles.header}>
+        <Text style={styles.title}>Selamat datang di Vehigo</Text>
+        <Text style={styles.subtitle}>
+          Dari Pilihan ke Perjalanan, Semua dalam Genggaman. Daftar Sekarang!
+        </Text>
+      </View>
+
+      <View style={styles.form}>
+        <TextField
+          label="Email atau No. Telepon"
+          icon={Mail}
+          placeholder="nama@email.com"
+          autoCapitalize="none"
+          keyboardType="email-address"
+          value={identifier}
+          onChangeText={setIdentifier}
+        />
+        <TextField
+          label="Kata Sandi"
+          icon={Lock}
+          placeholder="Masukkan kata sandi"
+          secureTextEntry
+          value={password}
+          onChangeText={setPassword}
+        />
+        <TextField
+          label="Konfirmasi Kata Sandi"
+          icon={Lock}
+          placeholder="Masukkan ulang kata sandi"
+          secureTextEntry
+          value={confirmPassword}
+          onChangeText={setConfirmPassword}
+        />
+
+        <Pressable style={styles.agreeRow} onPress={() => setAgreed((v) => !v)}>
+          <View style={[styles.checkbox, agreed && styles.checkboxActive]}>
+            {agreed ? <Check size={13} color={colors.text.white} /> : null}
+          </View>
+          <Text style={styles.agreeText}>
+            Saya telah membaca dan menyetujui{' '}
+            <Text style={styles.agreeLink}>Syarat & Ketentuan</Text> dari Vehigo
           </Text>
-        </View>
+        </Pressable>
 
-        <View style={styles.form}>
-          <View style={styles.inputGroup}>
-            <Text style={styles.label}>Email atau No. Telepon</Text>
-            <TextInput
-              style={styles.input}
-              placeholder="nama@email.com"
-              placeholderTextColor={colors.text.muted}
-              value={identifier}
-              onChangeText={setIdentifier}
-              autoCapitalize="none"
-            />
-          </View>
+        <PrimaryButton
+          label="Daftar"
+          disabled={!agreed}
+          onPress={() => navigation.navigate('PilihRole')}
+        />
 
-          <View style={styles.inputGroup}>
-            <Text style={styles.label}>Kata Sandi</Text>
-            <TextInput
-              style={styles.input}
-              placeholder="Masukkan kata sandi"
-              placeholderTextColor={colors.text.muted}
-              secureTextEntry
-              value={password}
-              onChangeText={setPassword}
-            />
-          </View>
-
-          <View style={styles.inputGroup}>
-            <Text style={styles.label}>Konfirmasi Kata Sandi</Text>
-            <TextInput
-              style={styles.input}
-              placeholder="Masukkan kata sandi lagi"
-              placeholderTextColor={colors.text.muted}
-              secureTextEntry
-              value={confirmPassword}
-              onChangeText={setConfirmPassword}
-            />
-          </View>
-
-          <TouchableOpacity
-            style={styles.submitButton}
-            activeOpacity={0.8}
-            onPress={() => navigation.navigate('PilihRole')}
-          >
-            <Text style={styles.submitButtonText}>DAFTAR</Text>
-          </TouchableOpacity>
-
-          <View style={styles.loginContainer}>
-            <Text style={styles.loginPrompt}>Sudah punya akun? </Text>
-            <TouchableOpacity onPress={() => navigation.navigate('Login')}>
-              <Text style={styles.loginLink}>Masuk</Text>
-            </TouchableOpacity>
-          </View>
-        </View>
-      </ScrollView>
-    </SafeAreaView>
+        <Pressable style={styles.linkRow} onPress={() => navigation.navigate('Login')}>
+          <Text style={styles.linkMuted}>Sudah punya akun? </Text>
+          <Text style={styles.link}>Masuk di sini</Text>
+        </Pressable>
+      </View>
+    </Screen>
   );
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: colors.background,
-  },
-  scrollContent: {
-    paddingHorizontal: 24,
-    paddingBottom: 24,
-  },
-  topNav: {
-    paddingVertical: 12,
-  },
-  backBtn: {
-    fontSize: 14,
-    fontWeight: '700',
-    color: colors.primary,
-  },
   header: {
-    marginTop: 12,
-    marginBottom: 28,
+    marginTop: spacing.sm,
+    marginBottom: spacing.lg,
+    gap: spacing.sm,
   },
   title: {
-    fontSize: 26,
-    fontWeight: '700',
-    color: colors.primary,
-    marginBottom: 10,
+    ...typography.h2,
   },
   subtitle: {
-    fontSize: 15,
-    color: colors.primary,
-    lineHeight: 22,
-    opacity: 0.8,
+    ...typography.body,
+    color: colors.text.secondary,
   },
   form: {
-    gap: 18,
+    gap: spacing.base,
   },
-  inputGroup: {
-    gap: 8,
+  agreeRow: {
+    flexDirection: 'row',
+    gap: spacing.md,
+    alignItems: 'flex-start',
   },
-  label: {
-    fontSize: 14,
-    fontWeight: '600',
-    color: '#1F2937',
-  },
-  input: {
+  checkbox: {
+    width: 22,
+    height: 22,
+    borderRadius: 6,
     borderWidth: 1.5,
-    borderColor: '#E5E7EB',
-    borderRadius: 12,
-    paddingHorizontal: 16,
-    paddingVertical: 14,
-    fontSize: 15,
-    color: colors.primary,
-    backgroundColor: '#F9FAFB',
-  },
-  submitButton: {
-    backgroundColor: colors.primary,
-    paddingVertical: 16,
-    borderRadius: 14,
+    borderColor: colors.border,
     alignItems: 'center',
-    marginTop: 12,
-    shadowColor: colors.primary,
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.2,
-    shadowRadius: 8,
-    elevation: 4,
+    justifyContent: 'center',
+    marginTop: 2,
   },
-  submitButtonText: {
-    color: '#FFFFFF',
-    fontSize: 14,
-    fontWeight: '800',
-    letterSpacing: 1,
+  checkboxActive: {
+    backgroundColor: colors.primary,
+    borderColor: colors.primary,
   },
-  loginContainer: {
+  agreeText: {
+    ...typography.bodySm,
+    flex: 1,
+    color: colors.text.secondary,
+  },
+  agreeLink: {
+    fontWeight: '700',
+    color: colors.secondary,
+  },
+  linkRow: {
     flexDirection: 'row',
     justifyContent: 'center',
-    alignItems: 'center',
-    marginTop: 16,
+    marginTop: spacing.sm,
   },
-  loginPrompt: {
-    fontSize: 13,
-    color: colors.primary,
+  linkMuted: {
+    ...typography.bodySm,
+    color: colors.text.secondary,
   },
-  loginLink: {
-    fontSize: 13,
+  link: {
+    ...typography.bodySm,
     fontWeight: '700',
     color: colors.secondary,
   },

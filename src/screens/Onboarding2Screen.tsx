@@ -1,55 +1,74 @@
-﻿import React from 'react';
-import { View, StyleSheet, Text, TouchableOpacity, Image } from 'react-native';
+import React from 'react';
+import { StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
+import { BarChart3, Car, Check, KeyRound } from 'lucide-react-native';
 import { RootStackParamList } from '../navigation/types';
 import { colors } from '../theme/colors';
+import { spacing } from '../theme/spacing';
+import { typography } from '../theme/typography';
+import { PrimaryButton } from '../components/PrimaryButton';
+import { OnboardingHeader, PageDots } from '../components/OnboardingBits';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'Onboarding2'>;
+
+const perks = [
+  'Akses ribuan pilihan kendaraan berkualitas dan mitra rental terpercaya',
+  'Dapatkan laporan dan grafik analitik otomatis dari hasil penyewaan kendaraan Anda',
+];
 
 export default function Onboarding2Screen({ navigation }: Props) {
   return (
     <SafeAreaView style={styles.container}>
-      <View style={styles.topBar}>
-        <TouchableOpacity onPress={() => navigation.goBack()}>
-          <Text style={styles.backText}>‹ KEMBALI</Text>
-        </TouchableOpacity>
-        <TouchableOpacity onPress={() => navigation.navigate('Login')}>
-          <Text style={styles.skipText}>Lewati</Text>
-        </TouchableOpacity>
-      </View>
+      <OnboardingHeader onSkip={() => navigation.navigate('Login')} />
 
-      <View style={styles.imageContainer}>
-        <Image
-          source={require('../../assets/screens/onboarding_2.png')}
-          style={styles.image}
-          resizeMode="contain"
-        />
+      <View style={styles.illustration}>
+        <View style={styles.leftPanel}>
+          <Car size={40} color={colors.primary} />
+          <Text style={styles.panelLabel}>Penyewa</Text>
+        </View>
+        <View style={styles.rightPanel}>
+          <KeyRound size={40} color={colors.text.white} />
+          <Text style={[styles.panelLabel, styles.panelLabelLight]}>Mitra</Text>
+        </View>
+        <View style={styles.chartBadge}>
+          <BarChart3 size={18} color={colors.text.white} />
+        </View>
       </View>
 
       <View style={styles.content}>
-        <Text style={styles.title}>Sewa Kendaraan{'\n'}atau Jadi Pemilik?</Text>
-        <Text style={styles.description}>
-          Butuh kendaraan untuk perjalanan? Atau punya kendaraan yang ingin disewakan? Di Vehigo, Anda bisa melakukan keduanya dengan mudah!
+        <Text style={styles.title}>Sewa Kendaraan atau Jadi Pemilik?</Text>
+        <Text style={styles.body}>
+          Butuh kendaraan untuk perjalanan? Atau punya kendaraan yang ingin disewakan? Di
+          Vehigo, Anda bisa melakukan keduanya dengan mudah!
         </Text>
 
-        <View style={styles.indicatorContainer}>
-          <View style={styles.dot} />
-          <View style={[styles.dot, styles.activeDot]} />
-          <View style={styles.dot} />
+        <View style={styles.perks}>
+          {perks.map((perk) => (
+            <View key={perk} style={styles.perkRow}>
+              <View style={styles.check}>
+                <Check size={14} color={colors.text.white} />
+              </View>
+              <Text style={styles.perkText}>{perk}</Text>
+            </View>
+          ))}
         </View>
 
-        <TouchableOpacity
-          style={styles.button}
-          activeOpacity={0.8}
-          onPress={() => navigation.navigate('Onboarding3')}
-        >
-          <Text style={styles.buttonText}>LANJUT</Text>
-        </TouchableOpacity>
+        <PageDots total={3} active={1} />
 
-        <Text style={styles.copyright}>
-          © 2026 Vehigo Indonesia. Seluruh Hak Cipta Dilindungi.
-        </Text>
+        <View style={styles.actions}>
+          <PrimaryButton
+            label="KEMBALI"
+            variant="secondary"
+            onPress={() => navigation.goBack()}
+            style={styles.actionButton}
+          />
+          <PrimaryButton
+            label="LANJUT"
+            onPress={() => navigation.navigate('Onboarding3')}
+            style={styles.actionButton}
+          />
+        </View>
       </View>
     </SafeAreaView>
   );
@@ -59,92 +78,94 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: colors.background,
-    justifyContent: 'space-between',
-    paddingHorizontal: 24,
-    paddingBottom: 20,
+    paddingHorizontal: spacing.lg,
+    paddingBottom: spacing.base,
   },
-  topBar: {
+  illustration: {
+    flex: 1,
     flexDirection: 'row',
-    justifyContent: 'space-between',
     alignItems: 'center',
-    paddingTop: 8,
+    justifyContent: 'center',
+    gap: spacing.md,
   },
-  backText: {
-    fontSize: 14,
+  leftPanel: {
+    width: 130,
+    height: 170,
+    borderRadius: 24,
+    backgroundColor: colors.card,
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: spacing.sm,
+  },
+  rightPanel: {
+    width: 130,
+    height: 200,
+    borderRadius: 24,
+    backgroundColor: colors.primary,
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: spacing.sm,
+  },
+  panelLabel: {
+    ...typography.bodySm,
     fontWeight: '700',
     color: colors.primary,
   },
-  skipText: {
-    fontSize: 16,
-    color: colors.secondary,
-    fontWeight: '500',
+  panelLabelLight: {
+    color: colors.text.white,
   },
-  imageContainer: {
-    flex: 1,
-    justifyContent: 'center',
+  chartBadge: {
+    position: 'absolute',
+    bottom: '18%',
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    backgroundColor: colors.secondary,
     alignItems: 'center',
-  },
-  image: {
-    width: '100%',
-    height: 300,
+    justifyContent: 'center',
   },
   content: {
+    gap: spacing.base,
     alignItems: 'center',
   },
   title: {
-    fontSize: 24,
-    fontWeight: '800',
-    color: colors.primary,
+    ...typography.h2,
     textAlign: 'center',
-    lineHeight: 32,
-    marginBottom: 12,
   },
-  description: {
-    fontSize: 14,
+  body: {
+    ...typography.bodySm,
+    textAlign: 'center',
     color: colors.text.secondary,
-    textAlign: 'center',
-    lineHeight: 22,
-    marginBottom: 24,
-    paddingHorizontal: 8,
   },
-  indicatorContainer: {
-    flexDirection: 'row',
-    gap: 8,
-    marginBottom: 24,
-  },
-  dot: {
-    width: 8,
-    height: 8,
-    borderRadius: 4,
-    backgroundColor: '#D1D5DB',
-  },
-  activeDot: {
-    width: 24,
-    backgroundColor: colors.primary,
-  },
-  button: {
-    backgroundColor: colors.primary,
+  perks: {
+    gap: spacing.md,
     width: '100%',
-    paddingVertical: 16,
-    borderRadius: 14,
+  },
+  perkRow: {
+    flexDirection: 'row',
+    gap: spacing.md,
+    alignItems: 'flex-start',
+  },
+  check: {
+    width: 24,
+    height: 24,
+    borderRadius: 12,
+    backgroundColor: colors.primary,
     alignItems: 'center',
     justifyContent: 'center',
-    shadowColor: colors.primary,
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.2,
-    shadowRadius: 8,
-    elevation: 4,
+    marginTop: 1,
   },
-  buttonText: {
-    color: '#FFFFFF',
-    fontSize: 14,
-    fontWeight: '800',
-    letterSpacing: 1,
+  perkText: {
+    ...typography.bodySm,
+    flex: 1,
+    color: colors.text.secondary,
   },
-  copyright: {
-    fontSize: 11,
-    color: colors.primary,
-    marginTop: 20,
-    opacity: 0.7,
+  actions: {
+    flexDirection: 'row',
+    gap: spacing.md,
+    width: '100%',
+  },
+  actionButton: {
+    flex: 1,
   },
 });

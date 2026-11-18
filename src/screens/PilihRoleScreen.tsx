@@ -1,89 +1,97 @@
-﻿import React, { useState } from 'react';
-import { View, StyleSheet, Text, TouchableOpacity, ScrollView } from 'react-native';
+import React, { useState } from 'react';
+import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
+import { Car, KeyRound, ShieldCheck } from 'lucide-react-native';
 import { RootStackParamList } from '../navigation/types';
+import { AppHeader } from '../components/AppHeader';
+import { PrimaryButton } from '../components/PrimaryButton';
 import { colors } from '../theme/colors';
+import { spacing } from '../theme/spacing';
+import { typography } from '../theme/typography';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'PilihRole'>;
+type Role = 'penyewa' | 'mitra';
 
 export default function PilihRoleScreen({ navigation }: Props) {
-  const [selectedRole, setSelectedRole] = useState<'penyewa' | 'mitra'>('penyewa');
+  const [role, setRole] = useState<Role>('penyewa');
 
   return (
     <SafeAreaView style={styles.container}>
-      <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
-        <View style={styles.header}>
-          <Text style={styles.title}>Selamat datang di Vehigo</Text>
-          <Text style={styles.subtitle}>
-            Tentukan bagaimana Anda ingin memulai perjalanan bersama kami hari ini.
+      <AppHeader title="Pilih Peran" onBack={() => navigation.goBack()} />
+
+      <View style={styles.header}>
+        <Text style={styles.title}>Selamat datang di Vehigo</Text>
+        <Text style={styles.subtitle}>
+          Tentukan bagaimana Anda ingin memulai perjalanan bersama kami hari ini.
+        </Text>
+      </View>
+
+      <View style={styles.cards}>
+        <RoleCard
+          title="Penyewa"
+          description="Cari kendaraan terbaik dan pesan dengan proses yang aman dan instan."
+          icon={<Car size={26} color={role === 'penyewa' ? colors.text.white : colors.primary} />}
+          active={role === 'penyewa'}
+          onPress={() => setRole('penyewa')}
+        />
+        <RoleCard
+          title="Mitra"
+          description="Daftarkan kendaraan Anda dan mulailah menghasilkan pendapatan pasif."
+          icon={<KeyRound size={26} color={role === 'mitra' ? colors.text.white : colors.primary} />}
+          active={role === 'mitra'}
+          onPress={() => setRole('mitra')}
+        />
+      </View>
+
+      <View style={styles.notice}>
+        <ShieldCheck size={20} color={colors.primary} />
+        <View style={styles.noticeText}>
+          <Text style={styles.noticeTitle}>KEAMANAN TERJAMIN</Text>
+          <Text style={styles.noticeBody}>
+            Setiap peran memerlukan verifikasi identitas resmi (KTP/SIM) untuk menjaga
+            ekosistem tetap aman.
           </Text>
         </View>
+      </View>
 
-        <View style={styles.roleCardsContainer}>
-          {/* Card Penyewa */}
-          <TouchableOpacity
-            style={[
-              styles.card,
-              selectedRole === 'penyewa' && styles.selectedCard,
-            ]}
-            activeOpacity={0.85}
-            onPress={() => setSelectedRole('penyewa')}
-          >
-            <View style={styles.radioHeader}>
-              <Text style={styles.roleTitle}>Penyewa</Text>
-              <View style={[styles.radioOuter, selectedRole === 'penyewa' && styles.radioOuterActive]}>
-                {selectedRole === 'penyewa' && <View style={styles.radioInner} />}
-              </View>
-            </View>
-            <Text style={styles.roleDescription}>
-              Cari kendaraan terbaik dan pesan dengan proses yang aman dan instan.
-            </Text>
-          </TouchableOpacity>
-
-          {/* Card Mitra */}
-          <TouchableOpacity
-            style={[
-              styles.card,
-              selectedRole === 'mitra' && styles.selectedCard,
-            ]}
-            activeOpacity={0.85}
-            onPress={() => setSelectedRole('mitra')}
-          >
-            <View style={styles.radioHeader}>
-              <Text style={styles.roleTitle}>Mitra (Owner)</Text>
-              <View style={[styles.radioOuter, selectedRole === 'mitra' && styles.radioOuterActive]}>
-                {selectedRole === 'mitra' && <View style={styles.radioInner} />}
-              </View>
-            </View>
-            <Text style={styles.roleDescription}>
-              Daftarkan kendaraan Anda dan mulailah menghasilkan pendapatan pasif.
-            </Text>
-          </TouchableOpacity>
-        </View>
-
-        <View style={styles.noticeBox}>
-          <Text style={styles.noticeHeader}>KEAMANAN TERJAMIN</Text>
-          <Text style={styles.noticeText}>
-            Setiap peran memerlukan verifikasi identitas resmi (KTP/SIM) untuk menjaga ekosistem tetap aman.
-          </Text>
-        </View>
-
-        <View style={styles.footerSection}>
-          <Text style={styles.hintText}>
-            Anda dapat mengganti peran nanti melalui pengaturan profil.
-          </Text>
-
-          <TouchableOpacity
-            style={styles.continueButton}
-            activeOpacity={0.8}
-            onPress={() => alert(`Role terpilih: ${selectedRole.toUpperCase()}. Lanjut ke tahap berikutnya!`)}
-          >
-            <Text style={styles.continueButtonText}>LANJUTKAN</Text>
-          </TouchableOpacity>
-        </View>
-      </ScrollView>
+      <View style={styles.footer}>
+        <Text style={styles.hint}>Anda dapat mengganti peran nanti melalui pengaturan profil.</Text>
+        <PrimaryButton
+          label="Lanjutkan"
+          onPress={() =>
+            navigation.replace(role === 'mitra' ? 'OwnerReg1' : 'RenterApp')
+          }
+        />
+      </View>
     </SafeAreaView>
+  );
+}
+
+function RoleCard({
+  title,
+  description,
+  icon,
+  active,
+  onPress,
+}: {
+  title: string;
+  description: string;
+  icon: React.ReactNode;
+  active: boolean;
+  onPress: () => void;
+}) {
+  return (
+    <Pressable onPress={onPress} style={[styles.card, active && styles.cardActive]}>
+      <View style={[styles.iconBadge, active && styles.iconBadgeActive]}>{icon}</View>
+      <View style={styles.cardText}>
+        <Text style={styles.cardTitle}>{title}</Text>
+        <Text style={styles.cardDescription}>{description}</Text>
+      </View>
+      <View style={[styles.radio, active && styles.radioActive]}>
+        {active ? <View style={styles.radioDot} /> : null}
+      </View>
+    </Pressable>
   );
 }
 
@@ -91,123 +99,111 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: colors.background,
-  },
-  scrollContent: {
-    flexGrow: 1,
-    paddingHorizontal: 24,
-    paddingBottom: 24,
-    justifyContent: 'space-between',
+    paddingHorizontal: spacing.lg,
+    paddingBottom: spacing.lg,
   },
   header: {
-    marginTop: 20,
-    marginBottom: 24,
+    marginTop: spacing.sm,
+    marginBottom: spacing.lg,
+    gap: spacing.sm,
   },
   title: {
-    fontSize: 26,
-    fontWeight: '700',
-    color: colors.primary,
-    marginBottom: 8,
+    ...typography.h2,
   },
   subtitle: {
-    fontSize: 15,
-    color: colors.primary,
-    lineHeight: 22,
-    opacity: 0.8,
+    ...typography.body,
+    color: colors.text.secondary,
   },
-  roleCardsContainer: {
-    gap: 16,
-    marginBottom: 24,
+  cards: {
+    gap: spacing.base,
   },
   card: {
-    borderWidth: 2,
-    borderColor: '#E5E7EB',
-    borderRadius: 16,
-    padding: 20,
-    backgroundColor: '#FAFAFA',
-  },
-  selectedCard: {
-    borderColor: colors.primary,
-    backgroundColor: '#F3F4F8',
-  },
-  radioHeader: {
     flexDirection: 'row',
-    justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: 10,
+    gap: spacing.base,
+    padding: spacing.base,
+    borderRadius: 18,
+    borderWidth: 1.5,
+    borderColor: colors.border,
+    backgroundColor: colors.surface,
   },
-  roleTitle: {
-    fontSize: 20,
-    fontWeight: '700',
-    color: colors.primary,
+  cardActive: {
+    borderColor: colors.primary,
+    backgroundColor: colors.card,
   },
-  radioOuter: {
+  iconBadge: {
+    width: 52,
+    height: 52,
+    borderRadius: 16,
+    backgroundColor: colors.card,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  iconBadgeActive: {
+    backgroundColor: colors.primary,
+  },
+  cardText: {
+    flex: 1,
+    gap: 4,
+  },
+  cardTitle: {
+    ...typography.h3,
+  },
+  cardDescription: {
+    ...typography.bodySm,
+    color: colors.text.secondary,
+  },
+  radio: {
     width: 22,
     height: 22,
     borderRadius: 11,
     borderWidth: 2,
-    borderColor: '#9CA3AF',
-    justifyContent: 'center',
+    borderColor: colors.border,
     alignItems: 'center',
+    justifyContent: 'center',
   },
-  radioOuterActive: {
+  radioActive: {
     borderColor: colors.primary,
   },
-  radioInner: {
-    width: 12,
-    height: 12,
+  radioDot: {
+    width: 11,
+    height: 11,
     borderRadius: 6,
     backgroundColor: colors.primary,
   },
-  roleDescription: {
-    fontSize: 13,
-    color: '#4B5563',
-    lineHeight: 20,
-  },
-  noticeBox: {
-    backgroundColor: '#EFF6FF',
-    borderRadius: 12,
-    padding: 16,
+  notice: {
+    flexDirection: 'row',
+    gap: spacing.md,
+    padding: spacing.base,
+    borderRadius: 14,
+    backgroundColor: colors.card,
     borderLeftWidth: 4,
     borderLeftColor: colors.primary,
-    marginBottom: 24,
-  },
-  noticeHeader: {
-    fontSize: 11,
-    fontWeight: '800',
-    color: colors.primary,
-    marginBottom: 4,
-    letterSpacing: 0.5,
+    marginTop: spacing.lg,
   },
   noticeText: {
-    fontSize: 12,
-    color: colors.text.secondary,
-    lineHeight: 18,
+    flex: 1,
+    gap: 3,
   },
-  footerSection: {
-    alignItems: 'center',
-  },
-  hintText: {
-    fontSize: 11,
-    color: '#6B7280',
-    marginBottom: 16,
-    textAlign: 'center',
-  },
-  continueButton: {
-    backgroundColor: colors.primary,
-    width: '100%',
-    paddingVertical: 16,
-    borderRadius: 14,
-    alignItems: 'center',
-    shadowColor: colors.primary,
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.2,
-    shadowRadius: 8,
-    elevation: 4,
-  },
-  continueButtonText: {
-    color: '#FFFFFF',
-    fontSize: 14,
+  noticeTitle: {
+    ...typography.caption,
     fontWeight: '800',
-    letterSpacing: 1,
+    color: colors.primary,
+    letterSpacing: 0.5,
+  },
+  noticeBody: {
+    ...typography.caption,
+    color: colors.text.secondary,
+    lineHeight: 17,
+  },
+  footer: {
+    marginTop: 'auto',
+    paddingTop: spacing.lg,
+    gap: spacing.md,
+  },
+  hint: {
+    ...typography.caption,
+    textAlign: 'center',
+    color: colors.text.muted,
   },
 });

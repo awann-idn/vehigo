@@ -1,9 +1,16 @@
-﻿import React, { useState } from 'react';
-import { View, StyleSheet, Text, TextInput, TouchableOpacity, ScrollView } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import React, { useState } from 'react';
+import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
+import { Lock, Mail } from 'lucide-react-native';
 import { RootStackParamList } from '../navigation/types';
+import { AppHeader } from '../components/AppHeader';
+import { PrimaryButton } from '../components/PrimaryButton';
+import { Screen } from '../components/Screen';
+import { TextField } from '../components/TextField';
+import { SocialAuthRow } from '../components/SocialAuthRow';
 import { colors } from '../theme/colors';
+import { spacing } from '../theme/spacing';
+import { typography } from '../theme/typography';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'Login'>;
 
@@ -12,172 +19,107 @@ export default function LoginScreen({ navigation }: Props) {
   const [password, setPassword] = useState('');
 
   return (
-    <SafeAreaView style={styles.container}>
-      <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
-        <View style={styles.header}>
-          <Text style={styles.title}>Selamat datang kembali!</Text>
-          <Text style={styles.subtitle}>
-            Sewa kendaraan impian Anda dengan lebih cepat dan aman bersama Vehigo!
-          </Text>
+    <Screen scroll>
+      <AppHeader onBack={() => navigation.goBack()} />
+
+      <View style={styles.header}>
+        <Text style={styles.title}>Selamat datang kembali!</Text>
+        <Text style={styles.subtitle}>
+          Sewa kendaraan impian Anda dengan lebih cepat dan aman bersama Vehigo!
+        </Text>
+      </View>
+
+      <View style={styles.form}>
+        <TextField
+          label="Email atau No. Telepon"
+          icon={Mail}
+          placeholder="nama@email.com"
+          autoCapitalize="none"
+          keyboardType="email-address"
+          value={identifier}
+          onChangeText={setIdentifier}
+        />
+
+        <View style={styles.passwordBlock}>
+          <TextField
+            label="Kata Sandi"
+            icon={Lock}
+            placeholder="Masukkan kata sandi Anda"
+            secureTextEntry
+            value={password}
+            onChangeText={setPassword}
+          />
+          <Pressable style={styles.forgot} hitSlop={8}>
+            <Text style={styles.forgotText}>Lupa Sandi?</Text>
+          </Pressable>
         </View>
 
-        <View style={styles.form}>
-          <View style={styles.inputGroup}>
-            <Text style={styles.label}>Email atau No. Telepon</Text>
-            <TextInput
-              style={styles.input}
-              placeholder="nama@email.com"
-              placeholderTextColor={colors.text.muted}
-              value={identifier}
-              onChangeText={setIdentifier}
-              autoCapitalize="none"
-            />
-          </View>
+        <PrimaryButton label="MASUK" onPress={() => navigation.navigate('PilihRole')} />
 
-          <View style={styles.inputGroup}>
-            <View style={styles.passwordHeader}>
-              <Text style={styles.label}>Kata Sandi</Text>
-              <TouchableOpacity>
-                <Text style={styles.forgotPassword}>Lupa Sandi?</Text>
-              </TouchableOpacity>
-            </View>
-            <TextInput
-              style={styles.input}
-              placeholder="Masukkan kata sandi Anda"
-              placeholderTextColor={colors.text.muted}
-              secureTextEntry
-              value={password}
-              onChangeText={setPassword}
-            />
-          </View>
+        <SocialAuthRow />
 
-          <TouchableOpacity
-            style={styles.loginButton}
-            activeOpacity={0.8}
-            onPress={() => navigation.navigate('PilihRole')}
-          >
-            <Text style={styles.loginButtonText}>MASUK</Text>
-          </TouchableOpacity>
+        <Pressable style={styles.linkRow} onPress={() => navigation.navigate('SignUp')}>
+          <Text style={styles.linkMuted}>Belum punya akun? </Text>
+          <Text style={styles.link}>Daftar Sekarang</Text>
+        </Pressable>
+      </View>
 
-          <View style={styles.registerContainer}>
-            <Text style={styles.registerPrompt}>Belum punya akun? </Text>
-            <TouchableOpacity onPress={() => navigation.navigate('SignUp')}>
-              <Text style={styles.registerLink}>Daftar Sekarang</Text>
-            </TouchableOpacity>
-          </View>
-        </View>
-
-        <View style={styles.footer}>
-          <TouchableOpacity onPress={() => navigation.navigate('PilihRole')}>
-            <Text style={styles.guestText}>
-              *Jelajahi aplikasi tanpa akun. Beberapa fitur mungkin terbatas.
-            </Text>
-          </TouchableOpacity>
-        </View>
-      </ScrollView>
-    </SafeAreaView>
+      <Pressable style={styles.guest} onPress={() => navigation.navigate('RenterApp')}>
+        <Text style={styles.guestText}>
+          *Jelajahi aplikasi tanpa akun. Beberapa fitur mungkin terbatas.
+        </Text>
+      </Pressable>
+    </Screen>
   );
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: colors.background,
-  },
-  scrollContent: {
-    flexGrow: 1,
-    paddingHorizontal: 24,
-    justifyContent: 'space-between',
-    paddingBottom: 24,
-  },
   header: {
-    marginTop: 24,
-    marginBottom: 32,
+    marginTop: spacing.sm,
+    marginBottom: spacing.lg,
+    gap: spacing.sm,
   },
   title: {
-    fontSize: 26,
-    fontWeight: '700',
-    color: colors.primary,
-    marginBottom: 10,
+    ...typography.h2,
   },
   subtitle: {
-    fontSize: 15,
-    color: colors.primary,
-    lineHeight: 22,
-    opacity: 0.8,
+    ...typography.body,
+    color: colors.text.secondary,
   },
   form: {
-    gap: 20,
+    gap: spacing.base,
   },
-  inputGroup: {
-    gap: 8,
+  passwordBlock: {
+    gap: spacing.sm,
   },
-  label: {
-    fontSize: 14,
-    fontWeight: '600',
-    color: '#1F2937',
+  forgot: {
+    alignSelf: 'flex-end',
   },
-  passwordHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-  },
-  forgotPassword: {
-    fontSize: 12,
-    color: colors.secondary,
-    fontWeight: '600',
-  },
-  input: {
-    borderWidth: 1.5,
-    borderColor: '#E5E7EB',
-    borderRadius: 12,
-    paddingHorizontal: 16,
-    paddingVertical: 14,
-    fontSize: 15,
-    color: colors.primary,
-    backgroundColor: '#F9FAFB',
-  },
-  loginButton: {
-    backgroundColor: colors.primary,
-    paddingVertical: 16,
-    borderRadius: 14,
-    alignItems: 'center',
-    marginTop: 12,
-    shadowColor: colors.primary,
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.2,
-    shadowRadius: 8,
-    elevation: 4,
-  },
-  loginButtonText: {
-    color: '#FFFFFF',
-    fontSize: 14,
-    fontWeight: '800',
-    letterSpacing: 1,
-  },
-  registerContainer: {
-    flexDirection: 'row',
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginTop: 16,
-  },
-  registerPrompt: {
-    fontSize: 13,
-    color: colors.primary,
-  },
-  registerLink: {
-    fontSize: 13,
+  forgotText: {
+    ...typography.bodySm,
     fontWeight: '700',
     color: colors.secondary,
   },
-  footer: {
-    marginTop: 40,
-    alignItems: 'center',
+  linkRow: {
+    flexDirection: 'row',
+    justifyContent: 'center',
+    marginTop: spacing.sm,
+  },
+  linkMuted: {
+    ...typography.bodySm,
+    color: colors.text.secondary,
+  },
+  link: {
+    ...typography.bodySm,
+    fontWeight: '700',
+    color: colors.secondary,
+  },
+  guest: {
+    marginTop: spacing.xl,
   },
   guestText: {
-    fontSize: 11,
+    ...typography.caption,
     color: colors.text.muted,
     textAlign: 'center',
-    lineHeight: 16,
   },
 });

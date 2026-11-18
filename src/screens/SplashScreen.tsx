@@ -1,47 +1,53 @@
-﻿import React from 'react';
-import { View, StyleSheet, Text, TouchableOpacity, Image } from 'react-native';
+import React, { useEffect, useState } from 'react';
+import { Animated, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
+import { Car, MapPin, Sparkles } from 'lucide-react-native';
 import { RootStackParamList } from '../navigation/types';
 import { colors } from '../theme/colors';
+import { spacing } from '../theme/spacing';
+import { typography } from '../theme/typography';
+import { PrimaryButton } from '../components/PrimaryButton';
 
-type Props = NativeStackScreenProps<RootStackParamList, 'SplashScreen'>;
+type Props = NativeStackScreenProps<RootStackParamList, 'Splash'>;
 
 export default function SplashScreen({ navigation }: Props) {
+  const [fade] = useState(() => new Animated.Value(0));
+
+  useEffect(() => {
+    Animated.timing(fade, { toValue: 1, duration: 600, useNativeDriver: true }).start();
+  }, [fade]);
+
   return (
     <SafeAreaView style={styles.container}>
       <View style={styles.header}>
-        <Image
-          source={require('../../assets/screens/vehigo_logo.png')}
-          style={styles.logoTop}
-          resizeMode="contain"
-        />
+        <View style={styles.logoRow}>
+          <View style={styles.logoMark}>
+            <Car size={20} color={colors.text.white} />
+          </View>
+          <Text style={styles.brand}>VEHIGO</Text>
+        </View>
       </View>
 
-      <View style={styles.illustrationWrapper}>
-        <Image
-          source={require('../../assets/screens/splash_screen.png')}
-          style={styles.bannerImage}
-          resizeMode="contain"
-        />
-      </View>
+      <Animated.View style={[styles.illustration, { opacity: fade }]}>
+        <View style={styles.illustrationGlow} />
+        <View style={styles.carCard}>
+          <Car size={96} color={colors.primary} strokeWidth={1.4} />
+          <View style={styles.badge}>
+            <Sparkles size={14} color={colors.text.white} />
+            <Text style={styles.badgeText}>Premium Fleet</Text>
+          </View>
+        </View>
+        <View style={styles.pin}>
+          <MapPin size={18} color={colors.primary} />
+          <Text style={styles.pinText}>Palembang</Text>
+        </View>
+      </Animated.View>
 
-      <View style={styles.bottomSection}>
-        <Text style={styles.title}>
-          Dari Pilihan ke Perjalanan, Semua dalam Genggaman
-        </Text>
-
-        <TouchableOpacity
-          style={styles.button}
-          activeOpacity={0.8}
-          onPress={() => navigation.navigate('Onboarding1')}
-        >
-          <Text style={styles.buttonText}>MULAI SEKARANG</Text>
-        </TouchableOpacity>
-
-        <Text style={styles.copyright}>
-          © 2026 Vehigo Indonesia. Seluruh Hak Cipta Dilindungi.
-        </Text>
+      <View style={styles.bottom}>
+        <Text style={styles.title}>Dari Pilihan ke Perjalanan, Semua dalam Genggaman</Text>
+        <PrimaryButton label="MULAI SEKARANG" onPress={() => navigation.navigate('Onboarding1')} />
+        <Text style={styles.copyright}>© 2026 Vehigo Indonesia. Seluruh Hak Cipta Dilindungi.</Text>
       </View>
     </SafeAreaView>
   );
@@ -51,62 +57,98 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: colors.background,
+    paddingHorizontal: spacing.lg,
+    paddingBottom: spacing.lg,
     justifyContent: 'space-between',
-    paddingHorizontal: 24,
-    paddingBottom: 20,
   },
   header: {
+    paddingTop: spacing.sm,
+  },
+  logoRow: {
+    flexDirection: 'row',
     alignItems: 'center',
-    marginTop: 10,
+    gap: spacing.sm,
   },
-  logoTop: {
-    width: 140,
-    height: 45,
-  },
-  illustrationWrapper: {
-    flex: 1,
+  logoMark: {
+    width: 34,
+    height: 34,
+    borderRadius: 10,
+    backgroundColor: colors.primary,
+    alignItems: 'center',
     justifyContent: 'center',
-    alignItems: 'center',
   },
-  bannerImage: {
-    width: '100%',
-    height: 320,
+  brand: {
+    ...typography.h3,
+    letterSpacing: 3,
+    color: colors.primary,
   },
-  bottomSection: {
+  illustration: {
+    flex: 1,
     alignItems: 'center',
-    marginBottom: 10,
+    justifyContent: 'center',
+  },
+  illustrationGlow: {
+    position: 'absolute',
+    width: 300,
+    height: 300,
+    borderRadius: 150,
+    backgroundColor: colors.card,
+  },
+  carCard: {
+    width: 280,
+    height: 220,
+    borderRadius: 32,
+    backgroundColor: colors.surface,
+    borderWidth: 1,
+    borderColor: colors.stroke,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  badge: {
+    position: 'absolute',
+    top: 18,
+    right: 18,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    backgroundColor: colors.primary,
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+    borderRadius: 999,
+  },
+  badgeText: {
+    ...typography.caption,
+    color: colors.text.white,
+    fontWeight: '700',
+  },
+  pin: {
+    marginTop: spacing.lg,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    backgroundColor: colors.secondaryButton,
+    paddingHorizontal: spacing.base,
+    paddingVertical: spacing.sm,
+    borderRadius: 999,
+  },
+  pinText: {
+    ...typography.bodySm,
+    fontWeight: '700',
+    color: colors.primary,
+  },
+  bottom: {
+    alignItems: 'center',
+    gap: spacing.base,
   },
   title: {
-    fontSize: 16,
-    color: colors.text.secondary,
+    ...typography.body,
     textAlign: 'center',
-    lineHeight: 24,
-    marginBottom: 28,
-    paddingHorizontal: 16,
-  },
-  button: {
-    backgroundColor: colors.primary,
-    width: '100%',
-    paddingVertical: 16,
-    borderRadius: 14,
-    alignItems: 'center',
-    justifyContent: 'center',
-    shadowColor: colors.primary,
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.2,
-    shadowRadius: 8,
-    elevation: 4,
-  },
-  buttonText: {
-    color: '#FFFFFF',
-    fontSize: 14,
-    fontWeight: '800',
-    letterSpacing: 1,
+    color: colors.text.secondary,
+    paddingHorizontal: spacing.sm,
   },
   copyright: {
-    fontSize: 11,
-    color: colors.primary,
-    marginTop: 20,
-    opacity: 0.7,
+    ...typography.caption,
+    color: colors.text.muted,
+    textAlign: 'center',
   },
 });
