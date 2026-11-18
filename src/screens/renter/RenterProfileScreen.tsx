@@ -1,4 +1,5 @@
 import React from 'react';
+import { useAuth } from '../../features/auth/useAuth';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import {
@@ -21,6 +22,7 @@ import { typography } from '../../theme/typography';
 type Props = NativeStackScreenProps<RootStackParamList, 'RenterApp'>;
 
 export default function RenterProfileScreen({ navigation }: Props) {
+  const { user, profile, signOut } = useAuth();
   return (
     <Screen scroll>
       <View style={styles.header}>
@@ -28,8 +30,8 @@ export default function RenterProfileScreen({ navigation }: Props) {
           <Text style={styles.avatarText}>BS</Text>
         </View>
         <View style={styles.headerText}>
-          <Text style={styles.name}>Budi Santoso</Text>
-          <Text style={styles.role}>Penyewa</Text>
+          <Text style={styles.name}>{profile?.full_name || user?.email?.split('@')[0] || 'Tamu Vehigo'}</Text>
+          <Text style={styles.role}>{profile?.role === 'mitra' ? 'Mitra' : 'Penyewa'}</Text>
         </View>
         <ChevronRight size={18} color={colors.text.muted} />
       </View>
@@ -55,7 +57,7 @@ export default function RenterProfileScreen({ navigation }: Props) {
         </Text>
       </Pressable>
 
-      <Pressable style={styles.logout} onPress={() => navigation.replace('LogoSplash')}>
+      <Pressable style={styles.logout} onPress={async () => { await signOut(); navigation.replace('Login'); }}>
         <LogOut size={18} color={colors.danger} />
         <Text style={styles.logoutText}>Keluar dari Akun</Text>
       </Pressable>
@@ -127,3 +129,4 @@ const styles = StyleSheet.create({
     color: colors.danger,
   },
 });
+

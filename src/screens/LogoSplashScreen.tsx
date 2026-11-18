@@ -6,22 +6,41 @@ import { Car } from 'lucide-react-native';
 import { RootStackParamList } from '../navigation/types';
 import { colors } from '../theme/colors';
 import { typography } from '../theme/typography';
+import { useAuth } from '../features/auth/useAuth';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'LogoSplash'>;
 
 export default function LogoSplashScreen({ navigation }: Props) {
   const [scale] = useState(() => new Animated.Value(0.8));
   const [opacity] = useState(() => new Animated.Value(0));
+  const { session, profile, isLoading } = useAuth();
 
   useEffect(() => {
     Animated.parallel([
       Animated.spring(scale, { toValue: 1, useNativeDriver: true, friction: 6 }),
       Animated.timing(opacity, { toValue: 1, duration: 500, useNativeDriver: true }),
     ]).start();
+  }, [opacity, scale]);
 
-    const timer = setTimeout(() => navigation.replace('Splash'), 1600);
+  useEffect(() => {
+    if (isLoading) return;
+
+    const timer = setTimeout(() => {
+      if (session) {
+        if (profile?.role === 'mitra') {
+          navigation.replace('OwnerApp');
+        } else if (profile?.role === 'penyewa') {
+          navigation.replace('RenterApp');
+        } else {
+          navigation.replace('PilihRole');
+        }
+      } else {
+        navigation.replace('Splash');
+      }
+    }, 1200);
+
     return () => clearTimeout(timer);
-  }, [navigation, opacity, scale]);
+  }, [isLoading, session, profile, navigation]);
 
   return (
     <SafeAreaView style={styles.container}>

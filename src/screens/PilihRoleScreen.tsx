@@ -9,12 +9,27 @@ import { PrimaryButton } from '../components/PrimaryButton';
 import { colors } from '../theme/colors';
 import { spacing } from '../theme/spacing';
 import { typography } from '../theme/typography';
+import { useAuth } from '../features/auth/useAuth';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'PilihRole'>;
 type Role = 'penyewa' | 'mitra';
 
 export default function PilihRoleScreen({ navigation }: Props) {
   const [role, setRole] = useState<Role>('penyewa');
+  const [loading, setLoading] = useState(false);
+  const { updateRole } = useAuth();
+
+  const handleContinue = async () => {
+    try {
+      setLoading(true);
+      await updateRole(role);
+      navigation.replace(role === 'mitra' ? 'OwnerReg1' : 'RenterApp');
+    } catch {
+      navigation.replace(role === 'mitra' ? 'OwnerReg1' : 'RenterApp');
+    } finally {
+      setLoading(false);
+    }
+  };
 
   return (
     <SafeAreaView style={styles.container}>
@@ -58,10 +73,9 @@ export default function PilihRoleScreen({ navigation }: Props) {
       <View style={styles.footer}>
         <Text style={styles.hint}>Anda dapat mengganti peran nanti melalui pengaturan profil.</Text>
         <PrimaryButton
-          label="Lanjutkan"
-          onPress={() =>
-            navigation.replace(role === 'mitra' ? 'OwnerReg1' : 'RenterApp')
-          }
+          label={loading ? "MENYIMPAN..." : "Lanjutkan"}
+          disabled={loading}
+          onPress={handleContinue}
         />
       </View>
     </SafeAreaView>

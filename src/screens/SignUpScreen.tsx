@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Pressable, StyleSheet, Text, View } from 'react-native';
+import { Alert, Pressable, StyleSheet, Text, View } from 'react-native';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { Check, Lock, Mail } from 'lucide-react-native';
 import { RootStackParamList } from '../navigation/types';
@@ -10,6 +10,8 @@ import { TextField } from '../components/TextField';
 import { colors } from '../theme/colors';
 import { spacing } from '../theme/spacing';
 import { typography } from '../theme/typography';
+import { supabase } from '../lib/supabase';
+import { mapAuthError } from '../lib/authErrors';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'SignUp'>;
 
@@ -18,6 +20,55 @@ export default function SignUpScreen({ navigation }: Props) {
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [agreed, setAgreed] = useState(false);
+  const [loading, setLoading] = useState(false);
+
+  const handleSignUp = async () => {
+    if (!identifier.trim() || !password) {
+      Alert.alert('Perhatian', 'Harap isi email dan kata sandi.');
+      return;
+    }
+
+    if (password !== confirmPassword) {
+      Alert.alert('Perhatian', 'Konfirmasi kata sandi tidak cocok.');
+      return;
+    }
+
+    if (password.length < 6) {
+      Alert.alert('Perhatian', 'Kata sandi minimal 6 karakter.');
+      return;
+    }
+
+    try {
+      setLoading(true);
+      const { data, error } = await supabase.auth.signUp({
+        email: identifier.trim(),
+        password,
+      });
+
+      if (error) {
+        Alert.alert('Gagal Mendaftar', mapAuthError(error));
+        return;
+      }
+
+      if (data.user) {
+        // Jika auto-confirm aktif atau langsung dapat user
+        Alert.alert(
+          'Pendaftaran Berhasil',
+          'Akun Anda telah dibuat! Silakan tentukan peran Anda.',
+          [
+            {
+              text: 'Lanjutkan',
+              onPress: () => navigation.navigate('PilihRole'),
+            },
+          ]
+        );
+      }
+    } catch (err: any) {
+      Alert.alert('Gagal Mendaftar', mapAuthError(err));
+    } finally {
+      setLoading(false);
+    }
+  };
 
   return (
     <Screen scroll>
@@ -68,9 +119,9 @@ export default function SignUpScreen({ navigation }: Props) {
         </Pressable>
 
         <PrimaryButton
-          label="Daftar"
-          disabled={!agreed}
-          onPress={() => navigation.navigate('PilihRole')}
+          label={loading ? "MEMPROSES..." : "Daftar"}
+          disabled={!agreed || loading}
+          onPress={handleSignUp}
         />
 
         <Pressable style={styles.linkRow} onPress={() => navigation.navigate('Login')}>

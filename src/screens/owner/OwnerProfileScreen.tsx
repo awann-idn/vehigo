@@ -1,4 +1,5 @@
 import React from 'react';
+import { useAuth } from '../../features/auth/useAuth';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import {
@@ -22,6 +23,7 @@ import { typography } from '../../theme/typography';
 type Props = NativeStackScreenProps<RootStackParamList, 'OwnerApp'>;
 
 export default function OwnerProfileScreen({ navigation }: Props) {
+  const { user, profile, signOut } = useAuth();
   return (
     <Screen scroll>
       <View style={styles.header}>
@@ -29,8 +31,8 @@ export default function OwnerProfileScreen({ navigation }: Props) {
           <Text style={styles.avatarText}>SR</Text>
         </View>
         <View style={styles.headerText}>
-          <Text style={styles.name}>Sriwijaya Rent</Text>
-          <Text style={styles.role}>Mitra • Terverifikasi</Text>
+          <Text style={styles.name}>{profile?.full_name || user?.email?.split('@')[0] || 'Mitra Vehigo'}</Text>
+          <Text style={styles.role}>Mitra â€¢ Terverifikasi</Text>
         </View>
         <Star size={18} color={colors.secondary} />
         <Text style={styles.rating}>4.9</Text>
@@ -56,7 +58,7 @@ export default function OwnerProfileScreen({ navigation }: Props) {
         <ListItem icon={HelpCircle} title="Pusat Bantuan" onPress={() => {}} />
       </View>
 
-      <Pressable style={styles.logout} onPress={() => navigation.replace('LogoSplash')}>
+      <Pressable style={styles.logout} onPress={async () => { await signOut(); navigation.replace('Login'); }}>
         <LogOut size={18} color={colors.danger} />
         <Text style={styles.logoutText}>Keluar dari Akun</Text>
       </Pressable>
@@ -148,3 +150,4 @@ const styles = StyleSheet.create({
     color: colors.danger,
   },
 });
+
