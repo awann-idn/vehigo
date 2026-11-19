@@ -1,5 +1,5 @@
 import React, { useMemo, useState } from 'react';
-import { Pressable, StyleSheet, Text, View } from 'react-native';
+import { ActivityIndicator, Pressable, StyleSheet, Text, View } from 'react-native';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { Search } from 'lucide-react-native';
 import { RootStackParamList } from '../../navigation/types';
@@ -11,15 +11,20 @@ import { EmptyState } from '../../components/EmptyState';
 import { colors } from '../../theme/colors';
 import { spacing } from '../../theme/spacing';
 import { typography } from '../../theme/typography';
-import { formatRupiah, ownerOrders } from '../../data/mock';
+import { formatRupiah } from '../../lib/formatters';
+import { useOrders } from '../../hooks/useOrders';
+import { useAuth } from '../../features/auth/useAuth';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'OwnerApp'>;
 
 const tabs = ['Semua', 'Belum Bayar', 'Berlangsung', 'Selesai', 'Denda', 'Draft WhatsApp'];
 
 export default function OwnerOrdersScreen({ navigation }: Props) {
+  const { user } = useAuth();
   const [query, setQuery] = useState('');
   const [tab, setTab] = useState('Semua');
+
+  const { data: ownerOrders = [], isLoading } = useOrders('mitra', user?.id);
 
   const data = useMemo(
     () =>
@@ -29,7 +34,7 @@ export default function OwnerOrdersScreen({ navigation }: Props) {
           (order.code.toLowerCase().includes(query.toLowerCase()) ||
             order.renter.toLowerCase().includes(query.toLowerCase()))
       ),
-    [query, tab]
+    [query, tab, ownerOrders]
   );
 
   return (
@@ -50,7 +55,9 @@ export default function OwnerOrdersScreen({ navigation }: Props) {
         <SegmentedTabs options={tabs} value={tab} onChange={setTab} />
       </View>
 
-      {data.length === 0 ? (
+      {isLoading ? (
+        <ActivityIndicator size="large" color={colors.primary} style={{ marginTop: spacing.xl }} />
+      ) : data.length === 0 ? (
         <EmptyState
           icon={Search}
           title="Belum ada pesanan"

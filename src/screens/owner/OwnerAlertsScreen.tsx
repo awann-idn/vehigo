@@ -1,15 +1,12 @@
 import React from 'react';
-import { Pressable, StyleSheet, Text, View } from 'react-native';
-import { NativeStackScreenProps } from '@react-navigation/native-stack';
-import { AlertTriangle, BellRing, CheckCircle2, MessageCircle } from 'lucide-react-native';
-import { RootStackParamList } from '../../navigation/types';
+import { StyleSheet, Text, View } from 'react-native';
+import { AlertTriangle, BellRing, CheckCircle2 } from 'lucide-react-native';
 import { Screen } from '../../components/Screen';
 import { colors } from '../../theme/colors';
 import { spacing } from '../../theme/spacing';
 import { typography } from '../../theme/typography';
-import { ownerNotifications } from '../../data/mock';
-
-type Props = NativeStackScreenProps<RootStackParamList, 'OwnerApp'>;
+import { useAuth } from '../../features/auth/useAuth';
+import { useNotifications } from '../../hooks/useNotifications';
 
 const toneIcon = {
   success: CheckCircle2,
@@ -17,18 +14,16 @@ const toneIcon = {
   warning: AlertTriangle,
 };
 
-export default function OwnerAlertsScreen({ navigation }: Props) {
+export default function OwnerAlertsScreen() {
+  const { user } = useAuth();
+  const { data: ownerNotifications = [] } = useNotifications(user?.id);
+
   return (
     <Screen scroll>
       <View style={styles.header}>
         <Text style={styles.title}>Notifikasi</Text>
         <Text style={styles.subtitle}>Aktivitas terbaru seputar usaha Anda</Text>
       </View>
-
-      <Pressable style={styles.chatLink} onPress={() => navigation.navigate('ChatDetail', { id: 'c1' })}>
-        <MessageCircle size={18} color={colors.primary} />
-        <Text style={styles.chatText}>Buka Chat Penyewa</Text>
-      </Pressable>
 
       <View style={styles.list}>
         {ownerNotifications.map((item) => {
@@ -72,19 +67,6 @@ const styles = StyleSheet.create({
   subtitle: {
     ...typography.bodySm,
     color: colors.text.muted,
-  },
-  chatLink: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: spacing.sm,
-    padding: spacing.base,
-    borderRadius: 14,
-    backgroundColor: colors.secondaryButton,
-  },
-  chatText: {
-    ...typography.bodySm,
-    fontWeight: '700',
-    color: colors.primary,
   },
   list: {
     gap: spacing.md,

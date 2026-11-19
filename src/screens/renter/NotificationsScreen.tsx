@@ -1,5 +1,5 @@
 import React from 'react';
-import { StyleSheet, Text, View } from 'react-native';
+import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { AlertTriangle, BellRing, CheckCircle2 } from 'lucide-react-native';
 import { RootStackParamList } from '../../navigation/types';
@@ -7,7 +7,8 @@ import { Screen } from '../../components/Screen';
 import { colors } from '../../theme/colors';
 import { spacing } from '../../theme/spacing';
 import { typography } from '../../theme/typography';
-import { ownerNotifications } from '../../data/mock';
+import { useAuth } from '../../features/auth/useAuth';
+import { useMarkNotificationRead, useNotifications } from '../../hooks/useNotifications';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'RenterApp'>;
 
@@ -18,6 +19,10 @@ const toneIcon = {
 };
 
 export default function NotificationsScreen({ navigation }: Props) {
+  const { user } = useAuth();
+  const { data: ownerNotifications = [] } = useNotifications(user?.id);
+  const markRead = useMarkNotificationRead();
+
   return (
     <Screen scroll>
       <View style={styles.header}>
@@ -28,7 +33,7 @@ export default function NotificationsScreen({ navigation }: Props) {
       {ownerNotifications.map((item) => {
         const Icon = toneIcon[item.tone];
         return (
-          <View key={item.id} style={styles.card}>
+          <Pressable key={item.id} style={styles.card} onPress={() => markRead.mutate(item.id)}>
             <View style={styles.iconBadge}>
               <Icon
                 size={18}
@@ -46,7 +51,7 @@ export default function NotificationsScreen({ navigation }: Props) {
               <Text style={styles.cardTitle}>{item.title}</Text>
               <Text style={styles.cardBody}>{item.body}</Text>
             </View>
-          </View>
+          </Pressable>
         );
       })}
     </Screen>

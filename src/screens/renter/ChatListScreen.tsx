@@ -7,11 +7,15 @@ import { Screen } from '../../components/Screen';
 import { colors } from '../../theme/colors';
 import { spacing } from '../../theme/spacing';
 import { typography } from '../../theme/typography';
-import { chatThreads } from '../../data/mock';
+import { useAuth } from '../../features/auth/useAuth';
+import { useChatThreads } from '../../hooks/useChat';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'RenterApp'>;
 
 export default function ChatListScreen({ navigation }: Props) {
+  const { user } = useAuth();
+  const { data: chatThreads = [] } = useChatThreads(user?.id);
+
   return (
     <Screen scroll>
       <View style={styles.header}>

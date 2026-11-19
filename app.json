@@ -25,7 +25,16 @@
       "favicon": "./assets/favicon.png"
     },
     "plugins": [
-      "expo-secure-store"
+      "expo-secure-store",
+      "expo-web-browser",
+      [
+        "expo-image-picker",
+        {
+          "photosPermission": "Vehigo memerlukan akses galeri untuk mengunggah foto kendaraan dan dokumen verifikasi.",
+          "cameraPermission": "Vehigo memerlukan akses kamera untuk mengambil foto kendaraan dan dokumen.",
+          "microphonePermission": "Vehigo tidak merekam audio."
+        }
+      ]
     ]
   }
 }

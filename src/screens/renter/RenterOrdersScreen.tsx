@@ -1,5 +1,5 @@
 import React, { useMemo, useState } from 'react';
-import { Pressable, StyleSheet, Text, View } from 'react-native';
+import { ActivityIndicator, Pressable, StyleSheet, Text, View } from 'react-native';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { Car, ClipboardList } from 'lucide-react-native';
 import { RootStackParamList } from '../../navigation/types';
@@ -11,18 +11,23 @@ import { PrimaryButton } from '../../components/PrimaryButton';
 import { colors } from '../../theme/colors';
 import { spacing } from '../../theme/spacing';
 import { typography } from '../../theme/typography';
-import { formatRupiah, renterOrders } from '../../data/mock';
+import { formatRupiah } from '../../lib/formatters';
+import { useAuth } from '../../features/auth/useAuth';
+import { useOrders } from '../../hooks/useOrders';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'RenterApp'>;
 
 const tabs = ['Semua', 'Belum Bayar', 'Berlangsung', 'Selesai', 'Denda'];
 
 export default function RenterOrdersScreen({ navigation }: Props) {
+  const { user } = useAuth();
   const [tab, setTab] = useState('Semua');
 
+  const { data: orders = [], isLoading } = useOrders('renter', user?.id);
+
   const data = useMemo(
-    () => renterOrders.filter((order) => tab === 'Semua' || order.status === tab),
-    [tab]
+    () => orders.filter((order) => tab === 'Semua' || order.status === tab),
+    [orders, tab]
   );
 
   return (
@@ -34,7 +39,9 @@ export default function RenterOrdersScreen({ navigation }: Props) {
 
       <SegmentedTabs options={tabs} value={tab} onChange={setTab} />
 
-      {data.length === 0 ? (
+      {isLoading ? (
+        <ActivityIndicator size="large" color={colors.primary} style={{ marginTop: spacing.xl }} />
+      ) : data.length === 0 ? (
         <EmptyState icon={ClipboardList} title="Belum ada pesanan" message="Pesanan Anda akan muncul di sini." />
       ) : (
         <View style={styles.list}>
@@ -63,14 +70,21 @@ export default function RenterOrdersScreen({ navigation }: Props) {
                 </View>
                 <View style={styles.rowText}>
                   <Text style={styles.vehicle}>{order.vehicle}</Text>
-                  <Text style={styles.meta}>{order.renter === 'Anda' ? order.vehicle : order.renter}</Text>
+                  <Text style={styles.meta}>{order.plate}</Text>
                   <Text style={styles.meta}>Total: {formatRupiah(order.total)}</Text>
                 </View>
               </View>
               {order.status === 'Belum Bayar' ? (
                 <PrimaryButton
                   label="Bayar Sekarang"
-                  onPress={() => navigation.navigate('BookingPayment', { vehicleId: 'v1' })}
+                  onPress={() => {
+                    if (!order.vehicleId) return;
+                    navigation.navigate('BookingPayment', {
+                      vehicleId: order.vehicleId,
+                      orderId: order.id,
+                      total: order.total,
+                    });
+                  }}
                 />
               ) : order.status === 'Berlangsung' ? (
                 <PrimaryButton

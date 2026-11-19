@@ -1,4 +1,5 @@
 import React, { createContext, useContext, useEffect, useState } from 'react';
+import * as Linking from 'expo-linking';
 import { Session, User } from '@supabase/supabase-js';
 import { supabase } from '../../lib/supabase';
 
@@ -10,7 +11,6 @@ export interface UserProfile {
   full_name: string | null;
   phone: string | null;
   avatar_url: string | null;
-  is_verified?: boolean;
 }
 
 interface AuthContextType {
@@ -19,6 +19,7 @@ interface AuthContextType {
   profile: UserProfile | null;
   role: UserRole;
   isLoading: boolean;
+  profileError: string | null;
   refreshProfile: () => Promise<void>;
   updateRole: (newRole: 'penyewa' | 'mitra') => Promise<void>;
   signOut: () => Promise<void>;
@@ -30,6 +31,7 @@ const AuthContext = createContext<AuthContextType>({
   profile: null,
   role: null,
   isLoading: true,
+  profileError: null,
   refreshProfile: async () => {},
   updateRole: async () => {},
   signOut: async () => {},
@@ -40,6 +42,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [user, setUser] = useState<User | null>(null);
   const [profile, setProfile] = useState<UserProfile | null>(null);
   const [isLoading, setIsLoading] = useState<boolean>(true);
+  const [profileError, setProfileError] = useState<string | null>(null);
 
   const fetchProfile = async (userId: string) => {
     try {
@@ -49,11 +52,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         .eq('id', userId)
         .single();
 
-      if (error) {
-        console.warn('Profile fetch warning (table may not exist yet or empty):', error.message);
-        setProfile(null);
-        return;
-      }
+      if (error) throw new Error(error.message);
+      setProfileError(null);
 
       if (data) {
         setProfile({
@@ -62,11 +62,14 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           full_name: data.full_name || null,
           phone: data.phone || null,
           avatar_url: data.avatar_url || null,
-          is_verified: data.is_verified || false,
         });
+      } else {
+        setProfile({ id: userId, role: null, full_name: null, phone: null, avatar_url: null });
       }
     } catch (err) {
-      console.warn('Error fetching profile:', err);
+      console.error('Error fetching profile:', err);
+      setProfileError(err instanceof Error ? err.message : 'Profil gagal dimuat');
+      setProfile(null);
     }
   };
 
@@ -87,11 +90,12 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           updated_at: new Date().toISOString(),
         });
 
-      if (!error) {
-        setProfile((prev) => (prev ? { ...prev, role: newRole } : { id: user.id, role: newRole, full_name: null, phone: null, avatar_url: null }));
-      }
+      if (error) throw new Error(error.message);
+      setProfileError(null);
+      setProfile((prev) => (prev ? { ...prev, role: newRole } : { id: user.id, role: newRole, full_name: null, phone: null, avatar_url: null }));
     } catch (err) {
       console.error('Error updating role:', err);
+      throw err instanceof Error ? err : new Error('Gagal memperbarui peran');
     }
   };
 
@@ -102,12 +106,38 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       setSession(null);
       setUser(null);
       setProfile(null);
+      setProfileError(null);
     }
   };
 
   useEffect(() => {
+    const handleAuthUrl = async (url: string) => {
+      const parsed = Linking.parse(url);
+      const query = parsed.queryParams ?? {};
+      const authError = typeof query.error_description === 'string'
+        ? query.error_description
+        : typeof query.error === 'string' ? query.error : null;
+      if (authError) {
+        console.error('OAuth callback error:', authError);
+        return;
+      }
+      const code = typeof query.code === 'string' ? query.code : null;
+      if (code) {
+        const { error } = await supabase.auth.exchangeCodeForSession(code);
+        if (error) console.error('OAuth callback error:', error.message);
+      }
+    };
+
+    Linking.getInitialURL().then((url) => {
+      if (url) void handleAuthUrl(url);
+    });
+    const linkingSubscription = Linking.addEventListener('url', ({ url }) => {
+      void handleAuthUrl(url);
+    });
+
     // 1. Get initial session
-    supabase.auth.getSession().then(({ data: { session } }) => {
+    supabase.auth.getSession().then(({ data: { session }, error }) => {
+      if (error) console.error('Error restoring session:', error.message);
       setSession(session);
       setUser(session?.user ?? null);
       if (session?.user) {
@@ -115,6 +145,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       } else {
         setIsLoading(false);
       }
+    }).catch((error) => {
+      console.error('Error initializing auth:', error);
+      setIsLoading(false);
     });
 
     // 2. Listen for auth changes
@@ -133,6 +166,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
     return () => {
       subscription.unsubscribe();
+      linkingSubscription.remove();
     };
   }, []);
 
@@ -144,6 +178,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         profile,
         role: profile?.role ?? null,
         isLoading,
+        profileError,
         refreshProfile,
         updateRole,
         signOut,

@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
+import { Alert, Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { AlertTriangle, Send } from 'lucide-react-native';
@@ -8,28 +8,44 @@ import { AppHeader } from '../../components/AppHeader';
 import { colors } from '../../theme/colors';
 import { spacing } from '../../theme/spacing';
 import { typography } from '../../theme/typography';
-import { chatMessages, chatThreads } from '../../data/mock';
+import { useAuth } from '../../features/auth/useAuth';
+import { useChatMessages, useChatThread, useSendMessage } from '../../hooks/useChat';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'ChatDetail'>;
 
 export default function ChatDetailScreen({ navigation, route }: Props) {
-  const thread = chatThreads.find((item) => item.id === route.params.id) ?? chatThreads[0];
-  const [messages, setMessages] = useState(chatMessages);
+  const { user } = useAuth();
+  const { data } = useChatMessages(route.params.id, user?.id);
+  const { data: thread } = useChatThread(route.params.id, user?.id);
+  const sendMessage = useSendMessage();
+  const messages = data ?? [];
   const [draft, setDraft] = useState('');
   const [emergency, setEmergency] = useState(false);
 
-  const send = () => {
-    if (!draft.trim()) return;
-    setMessages((prev) => [
-      ...prev,
-      { id: `local-${prev.length + 1}`, fromMe: true, text: draft.trim(), time: 'Baru' },
-    ]);
+  const send = async () => {
+    const text = draft.trim();
+    if (!text) return;
     setDraft('');
+
+    if (!user) {
+      Alert.alert('Login diperlukan', 'Silakan login untuk mengirim pesan.');
+      return;
+    }
+
+    try {
+      await sendMessage.mutateAsync({
+        chatId: route.params.id,
+        senderId: user.id,
+        body: text,
+      });
+    } catch (error) {
+      Alert.alert('Pesan gagal dikirim', error instanceof Error ? error.message : 'Coba lagi.');
+    }
   };
 
   return (
     <SafeAreaView style={styles.container}>
-      <AppHeader title={thread.name} onBack={() => navigation.goBack()} />
+      <AppHeader title={thread?.name ?? 'Chat'} onBack={() => navigation.goBack()} />
 
       <Pressable
         style={[styles.emergency, emergency && styles.emergencyActive]}
@@ -64,7 +80,7 @@ export default function ChatDetailScreen({ navigation, route }: Props) {
           onChangeText={setDraft}
           multiline
         />
-        <Pressable style={styles.send} onPress={send}>
+        <Pressable style={styles.send} onPress={send} disabled={sendMessage.isPending}>
           <Send size={18} color={colors.text.white} />
         </Pressable>
       </View>

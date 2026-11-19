@@ -4,7 +4,16 @@ export function mapAuthError(error: any): string {
   const message = typeof error === 'string' ? error : error.message || '';
 
   if (message.includes('Invalid login credentials')) {
-    return 'Email atau kata sandi salah. Silakan periksa kembali.';
+    return 'Email belum terdaftar, email belum dikonfirmasi, atau kata sandi salah. Gunakan email yang sama persis dengan saat mendaftar.';
+  }
+  if (message.includes('Email not confirmed')) {
+    return 'Email belum dikonfirmasi. Cek inbox email Anda sebelum masuk.';
+  }
+  if (message.includes('provider is not enabled') || message.includes('Unsupported provider')) {
+    return 'Provider login belum diaktifkan di Supabase Dashboard.';
+  }
+  if (message.includes('400') || message.includes('validation_failed')) {
+    return 'Data login ditolak server. Pastikan email valid dan akun sudah terdaftar.';
   }
   if (message.includes('User already registered')) {
     return 'Email ini sudah terdaftar. Silakan masuk menggunakan akun Anda.';

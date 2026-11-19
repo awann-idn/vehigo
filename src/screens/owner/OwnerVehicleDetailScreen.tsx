@@ -1,5 +1,5 @@
 import React from 'react';
-import { StyleSheet, Text, View } from 'react-native';
+import { ActivityIndicator, Alert, StyleSheet, Text, View } from 'react-native';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { Car, Fuel, Gauge, Settings2, Users } from 'lucide-react-native';
 import { RootStackParamList } from '../../navigation/types';
@@ -11,12 +11,44 @@ import { StatusBadge } from '../../components/StatusBadge';
 import { colors } from '../../theme/colors';
 import { spacing } from '../../theme/spacing';
 import { typography } from '../../theme/typography';
-import { formatRupiah, vehicles } from '../../data/mock';
+import { formatRupiah } from '../../lib/formatters';
+import { useVehicle, useUpdateVehicleStatus } from '../../hooks/useVehicles';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'OwnerVehicleDetail'>;
 
 export default function OwnerVehicleDetailScreen({ navigation, route }: Props) {
-  const vehicle = vehicles.find((item) => item.id === route.params.id) ?? vehicles[0];
+  const { data: vehicle, isLoading } = useVehicle(route.params.id);
+  const updateStatusMutation = useUpdateVehicleStatus();
+
+  if (isLoading || !vehicle) {
+    return (
+      <Screen>
+        <AppHeader title="Detail Kendaraan" onBack={() => navigation.goBack()} />
+        <ActivityIndicator size="large" color={colors.primary} style={{ marginTop: spacing.xl }} />
+      </Screen>
+    );
+  }
+
+  const handleToggleStatus = () => {
+    const nextStatus =
+      vehicle.status === 'Tersedia'
+        ? 'maintenance'
+        : vehicle.status === 'Maintenance'
+          ? 'tersedia'
+          : 'tersedia';
+
+    updateStatusMutation.mutate(
+      { id: vehicle.id, status: nextStatus },
+      {
+        onSuccess: () => {
+          Alert.alert('Sukses', `Status kendaraan diubah ke ${nextStatus}.`);
+        },
+        onError: (err) => {
+          Alert.alert('Error', err.message);
+        },
+      }
+    );
+  };
 
   return (
     <Screen scroll>
@@ -50,8 +82,21 @@ export default function OwnerVehicleDetailScreen({ navigation, route }: Props) {
       </View>
 
       <View style={styles.actions}>
-        <PrimaryButton label="Ubah Status" variant="secondary" onPress={() => {}} />
-        <PrimaryButton label="Edit Kendaraan" onPress={() => {}} />
+        <PrimaryButton
+          label={vehicle.status === 'Tersedia' ? 'Set Maintenance' : 'Set Tersedia'}
+          variant="secondary"
+          onPress={handleToggleStatus}
+          loading={updateStatusMutation.isPending}
+        />
+        <PrimaryButton
+          label="Edit Kendaraan"
+          onPress={() => navigation.navigate('OwnerAddVehicle', { id: vehicle.id })}
+        />
+        <PrimaryButton
+          label="Kelola Tanggal"
+          variant="secondary"
+          onPress={() => navigation.navigate('OwnerAvailability', { id: vehicle.id })}
+        />
       </View>
     </Screen>
   );

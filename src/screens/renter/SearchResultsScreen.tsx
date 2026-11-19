@@ -1,5 +1,5 @@
 import React, { useMemo, useState } from 'react';
-import { Pressable, StyleSheet, Text, View } from 'react-native';
+import { ActivityIndicator, Pressable, StyleSheet, Text, View } from 'react-native';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { Car, Search, SlidersHorizontal, Star } from 'lucide-react-native';
 import { RootStackParamList } from '../../navigation/types';
@@ -11,7 +11,8 @@ import { EmptyState } from '../../components/EmptyState';
 import { colors } from '../../theme/colors';
 import { spacing } from '../../theme/spacing';
 import { typography } from '../../theme/typography';
-import { formatRupiah, vehicles } from '../../data/mock';
+import { formatRupiah } from '../../lib/formatters';
+import { useVehicles } from '../../hooks/useVehicles';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'SearchResults'>;
 
@@ -20,6 +21,8 @@ const filters = ['Semua', 'Matic', 'Manual', '7 Kursi', 'Hemat'];
 export default function SearchResultsScreen({ navigation }: Props) {
   const [query, setQuery] = useState('');
   const [filter, setFilter] = useState('Semua');
+
+  const { data: vehicles = [], isLoading } = useVehicles();
 
   const data = useMemo(
     () =>
@@ -35,7 +38,7 @@ export default function SearchResultsScreen({ navigation }: Props) {
           (filter === 'Hemat' && vehicle.pricePerDay <= 400000);
         return matchesQuery && matchesFilter;
       }),
-    [filter, query]
+    [filter, query, vehicles]
   );
 
   return (
@@ -58,7 +61,9 @@ export default function SearchResultsScreen({ navigation }: Props) {
 
       <Text style={styles.count}>{data.length} kendaraan ditemukan</Text>
 
-      {data.length === 0 ? (
+      {isLoading ? (
+        <ActivityIndicator size="large" color={colors.primary} style={{ marginTop: spacing.xl }} />
+      ) : data.length === 0 ? (
         <EmptyState icon={Car} title="Tidak ditemukan" message="Coba kata kunci atau filter lain." />
       ) : (
         data.map((vehicle) => (

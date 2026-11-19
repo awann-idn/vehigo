@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useMemo } from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import {
@@ -19,31 +19,67 @@ import { StatusBadge } from '../../components/StatusBadge';
 import { colors } from '../../theme/colors';
 import { spacing } from '../../theme/spacing';
 import { typography } from '../../theme/typography';
-import { formatRupiah, ownerOrders, vehicles } from '../../data/mock';
+import { formatRupiah } from '../../lib/formatters';
+import { useAuth } from '../../features/auth/useAuth';
+import { useOrders } from '../../hooks/useOrders';
+import { useVehicles } from '../../hooks/useVehicles';
+import { useMitraRating, useMyMitraProfile } from '../../hooks/useMitras';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'OwnerApp'>;
 
-const kpis = [
-  { icon: Wallet, label: 'PENDAPATAN', value: 'Rp 8.5M', hint: 'Bulan ini' },
-  { icon: ClipboardList, label: 'PESANAN', value: '24', hint: 'Bulan ini' },
-  { icon: Car, label: 'ARMADA', value: `${vehicles.length} unit`, hint: 'Aktif' },
-  { icon: Star, label: 'RATING', value: '4.9', hint: 'Sangat Baik' },
-];
-
 export default function OwnerDashboardScreen({ navigation }: Props) {
+  const { user, profile } = useAuth();
+  const { data: orders = [] } = useOrders('mitra', user?.id);
+  const { data: vehicles = [] } = useVehicles(user?.id);
+  const { data: mitraProfile } = useMyMitraProfile(user?.id);
+  const { data: rating } = useMitraRating(user?.id);
+  const awaitingConfirmation = orders.filter((order) => order.status === 'Belum Bayar').length;
+
+  const revenue = orders
+    .filter((order) => order.status === 'Selesai')
+    .reduce((sum, order) => sum + order.total, 0);
+  const revenueLabel =
+    revenue >= 1_000_000 ? `Rp ${(revenue / 1_000_000).toFixed(1)}M` : formatRupiah(revenue);
+
+  const kpis = [
+    { icon: Wallet, label: 'PENDAPATAN', value: revenueLabel, hint: 'Bulan ini' },
+    { icon: ClipboardList, label: 'PESANAN', value: `${orders.length}`, hint: 'Bulan ini' },
+    { icon: Car, label: 'ARMADA', value: `${vehicles.length} unit`, hint: 'Aktif' },
+    {
+      icon: Star,
+      label: 'RATING',
+      value: rating?.average ? rating.average.toFixed(1) : '-',
+      hint: rating?.count ? `${rating.count} ulasan` : 'Belum ada ulasan',
+    },
+  ];
+
+  const bestSeller = useMemo(() => {
+    const counts: Record<string, number> = {};
+    orders.forEach((order) => {
+      counts[order.vehicle] = (counts[order.vehicle] ?? 0) + 1;
+    });
+    const sorted = Object.entries(counts).sort((a, b) => b[1] - a[1]);
+    return sorted[0] ? { name: sorted[0][0], count: sorted[0][1] } : null;
+  }, [orders]);
+
   return (
     <Screen scroll>
       <View style={styles.topBar}>
         <View style={styles.greetingBlock}>
           <Text style={styles.greeting}>Selamat datang,</Text>
-          <Text style={styles.brand}>Sriwijaya Rent!</Text>
+          <Text style={styles.brand}>{profile?.full_name || user?.email?.split('@')[0] || 'Profil belum dilengkapi'}</Text>
           <View style={styles.locationRow}>
             <MapPin size={13} color={colors.text.muted} />
-            <Text style={styles.location}>Palembang, ID</Text>
+            <Text style={styles.location} numberOfLines={1}>
+              {mitraProfile?.address || 'Lokasi belum diatur'}
+            </Text>
           </View>
         </View>
-        <Pressable style={styles.avatar} onPress={() => navigation.navigate('OwnerApp')}>
-          <Text style={styles.avatarText}>SR</Text>
+        <Pressable
+          style={styles.avatar}
+          onPress={() => (navigation as any).navigate('OwnerApp', { screen: 'Profil' })}
+        >
+          <Text style={styles.avatarText}>{(profile?.full_name || user?.email || 'M').slice(0, 2).toUpperCase()}</Text>
         </Pressable>
       </View>
 
@@ -52,7 +88,11 @@ export default function OwnerDashboardScreen({ navigation }: Props) {
           <TrendingUp size={20} color={colors.text.white} />
         </View>
         <View style={styles.bannerText}>
-          <Text style={styles.bannerTitle}>2 pesanan baru diselesaikan penyewa</Text>
+          <Text style={styles.bannerTitle}>
+            {awaitingConfirmation > 0
+              ? `${awaitingConfirmation} pesanan menunggu konfirmasi`
+              : 'Semua pesanan sudah ditangani'}
+          </Text>
           <Text style={styles.bannerBody}>
             Pantau performa usaha dan kelola aktivitas rental Anda secara real-time.
           </Text>
@@ -79,8 +119,10 @@ export default function OwnerDashboardScreen({ navigation }: Props) {
           <Car size={22} color={colors.primary} />
         </View>
         <View style={styles.bestText}>
-          <Text style={styles.bestTitle}>Toyota Avanza 2023</Text>
-          <Text style={styles.bestSub}>Mitsubishi Xpander</Text>
+          <Text style={styles.bestTitle}>{bestSeller?.name ?? 'Belum ada data'}</Text>
+          <Text style={styles.bestSub}>
+            {bestSeller ? `${bestSeller.count} pesanan` : 'Pesanan akan muncul di sini'}
+          </Text>
         </View>
         <StatusBadge label="INSIGHT" tone="success" />
       </Card>
@@ -88,22 +130,26 @@ export default function OwnerDashboardScreen({ navigation }: Props) {
       <View style={styles.insightRow}>
         <Card style={styles.insight}>
           <Text style={styles.insightLabel}>INSIGHT</Text>
-          <Text style={styles.insightText}>Avanza paling laris pekan ini</Text>
+          <Text style={styles.insightText}>
+            {bestSeller ? `${bestSeller.name} paling sering dipesan` : 'Belum ada data pesanan'}
+          </Text>
         </Card>
         <Card style={styles.insight}>
-          <Text style={styles.insightLabel}>PREDIKSI</Text>
-          <Text style={styles.insightText}>Hari tersibuk: Sabtu</Text>
+          <Text style={styles.insightLabel}>PENDAPATAN</Text>
+          <Text style={styles.insightText}>
+            {orders.filter((order) => order.status === 'Selesai').length} pesanan selesai
+          </Text>
         </Card>
       </View>
 
       <View style={styles.sectionHeader}>
         <Text style={styles.sectionTitle}>Pesanan Terbaru</Text>
-        <Pressable onPress={() => navigation.navigate('OwnerApp')}>
+        <Pressable onPress={() => (navigation as any).navigate('OwnerApp', { screen: 'Pesanan' })}>
           <Text style={styles.seeAll}>Lihat semua</Text>
         </Pressable>
       </View>
 
-      {ownerOrders.slice(0, 3).map((order) => (
+      {orders.slice(0, 3).map((order) => (
         <Pressable
           key={order.id}
           style={styles.orderRow}
@@ -125,7 +171,10 @@ export default function OwnerDashboardScreen({ navigation }: Props) {
         </Pressable>
       ))}
 
-      <Pressable style={styles.alertsLink} onPress={() => navigation.navigate('OwnerApp')}>
+      <Pressable
+        style={styles.alertsLink}
+        onPress={() => (navigation as any).navigate('OwnerApp', { screen: 'Alerts' })}
+      >
         <Bell size={16} color={colors.primary} />
         <Text style={styles.alertsLinkText}>Buka pusat notifikasi</Text>
       </Pressable>

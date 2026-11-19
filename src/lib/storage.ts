@@ -45,7 +45,12 @@ export async function uploadDocument(
 ): Promise<UploadResult> {
   const filename = `${docType}_${Date.now()}.jpg`;
   const storagePath = `${userId}/${filename}`;
-  const bucketName = docType === 'vehicle' ? 'vehicles' : 'documents';
+  const bucketName =
+    docType === 'vehicle'
+      ? 'vehicle-photos'
+      : docType === 'sim'
+        ? 'sim'
+        : 'ktp';
 
   const response = await fetch(fileUri);
   const blob = await response.blob();
@@ -62,25 +67,27 @@ export async function uploadDocument(
     throw new Error(`Gagal mengunggah ${docType}: ${uploadError.message}`);
   }
 
-  // Jika bucket private, buatkan signed URL sementara untuk preview
-  if (bucketName === 'documents') {
-    const { data: signedData } = await supabase.storage
-      .from('documents')
-      .createSignedUrl(storagePath, 3600); // 1 jam
-
-    return {
-      path: storagePath,
-      signedUrl: signedData?.signedUrl,
-    };
+  if (docType !== 'vehicle') {
+    const { error: documentError } = await supabase.from('documents').insert([
+      {
+        user_id: userId,
+        kind: docType,
+        storage_path: storagePath,
+        status: 'pending',
+      },
+    ]);
+    if (documentError) {
+      throw new Error(`Dokumen terunggah tetapi gagal dicatat: ${documentError.message}`);
+    }
   }
 
-  // Jika public bucket
-  const { data: publicData } = supabase.storage
-    .from('vehicles')
-    .getPublicUrl(storagePath);
+  // Semua bucket bersifat privat, jadi preview memakai signed URL sementara.
+  const { data: signedData } = await supabase.storage
+    .from(bucketName)
+    .createSignedUrl(storagePath, 3600); // 1 jam
 
   return {
     path: storagePath,
-    signedUrl: publicData.publicUrl,
+    signedUrl: signedData?.signedUrl,
   };
 }

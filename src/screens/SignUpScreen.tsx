@@ -23,8 +23,13 @@ export default function SignUpScreen({ navigation }: Props) {
   const [loading, setLoading] = useState(false);
 
   const handleSignUp = async () => {
-    if (!identifier.trim() || !password) {
+    const email = identifier.trim().toLowerCase();
+    if (!email || !password) {
       Alert.alert('Perhatian', 'Harap isi email dan kata sandi.');
+      return;
+    }
+    if (!/^\S+@\S+\.\S+$/.test(email)) {
+      Alert.alert('Email tidak valid', 'Gunakan alamat email yang valid.');
       return;
     }
 
@@ -41,26 +46,32 @@ export default function SignUpScreen({ navigation }: Props) {
     try {
       setLoading(true);
       const { data, error } = await supabase.auth.signUp({
-        email: identifier.trim(),
+        email,
         password,
       });
 
       if (error) {
-        Alert.alert('Gagal Mendaftar', mapAuthError(error));
+        Alert.alert(
+          'Signup ditolak Supabase',
+          `${mapAuthError(error)}\n\nDetail server: ${error.message}`
+        );
         return;
       }
 
-      if (data.user) {
-        // Jika auto-confirm aktif atau langsung dapat user
+      if (!data.user) {
+        Alert.alert('Signup tidak selesai', 'Supabase tidak mengembalikan user. Coba lagi.');
+        return;
+      }
+
+      if (data.session) {
+        Alert.alert('Pendaftaran Berhasil', 'Akun Anda telah dibuat. Silakan tentukan peran Anda.', [
+          { text: 'Lanjutkan', onPress: () => navigation.navigate('PilihRole') },
+        ]);
+      } else {
         Alert.alert(
-          'Pendaftaran Berhasil',
-          'Akun Anda telah dibuat! Silakan tentukan peran Anda.',
-          [
-            {
-              text: 'Lanjutkan',
-              onPress: () => navigation.navigate('PilihRole'),
-            },
-          ]
+          'Konfirmasi email diperlukan',
+          'Akun berhasil dibuat. Buka link konfirmasi di email Anda, lalu kembali ke halaman login untuk masuk.',
+          [{ text: 'Ke Login', onPress: () => navigation.replace('Login') }]
         );
       }
     } catch (err: any) {
@@ -83,7 +94,7 @@ export default function SignUpScreen({ navigation }: Props) {
 
       <View style={styles.form}>
         <TextField
-          label="Email atau No. Telepon"
+          label="Email"
           icon={Mail}
           placeholder="nama@email.com"
           autoCapitalize="none"

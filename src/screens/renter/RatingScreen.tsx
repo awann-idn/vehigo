@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Pressable, StyleSheet, Text, View } from 'react-native';
+import { Alert, Pressable, StyleSheet, Text, View } from 'react-native';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { Star } from 'lucide-react-native';
 import { RootStackParamList } from '../../navigation/types';
@@ -12,21 +12,63 @@ import { Card } from '../../components/Card';
 import { colors } from '../../theme/colors';
 import { spacing } from '../../theme/spacing';
 import { typography } from '../../theme/typography';
+import { useAuth } from '../../features/auth/useAuth';
+import { useOrder } from '../../hooks/useOrders';
+import { createReview } from '../../api/reviews';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'Rating'>;
 
-export default function RatingScreen({ navigation }: Props) {
+export default function RatingScreen({ navigation, route }: Props) {
+  const { user } = useAuth();
+  const { data: order } = useOrder(route.params.id);
   const [step, setStep] = useState(1);
   const [vehicleRating, setVehicleRating] = useState(5);
   const [mitraRating, setMitraRating] = useState(5);
   const [comment, setComment] = useState('');
+  const [submitting, setSubmitting] = useState(false);
 
-  const submit = () => {
+  const submit = async () => {
     if (step === 1) {
       setStep(2);
       return;
     }
-    navigation.replace('RenterApp');
+
+    if (!user || !order) {
+      navigation.replace('RenterApp');
+      return;
+    }
+
+    setSubmitting(true);
+    let succeeded = false;
+    try {
+      await Promise.all([
+        order.vehicleId
+          ? createReview({
+              orderId: order.id,
+              authorId: user.id,
+              targetType: 'vehicle',
+              targetId: order.vehicleId,
+              rating: vehicleRating,
+              body: comment.trim() || undefined,
+            })
+          : Promise.resolve(false),
+        order.mitraId
+          ? createReview({
+              orderId: order.id,
+              authorId: user.id,
+              targetType: 'mitra',
+              targetId: order.mitraId,
+              rating: mitraRating,
+            })
+          : Promise.resolve(false),
+      ]);
+      succeeded = true;
+    } catch (error) {
+      Alert.alert('Gagal mengirim ulasan', error instanceof Error ? error.message : 'Coba lagi.');
+    } finally {
+      setSubmitting(false);
+    }
+    if (succeeded) navigation.replace('RenterApp');
   };
 
   return (
@@ -52,18 +94,22 @@ export default function RatingScreen({ navigation }: Props) {
         <View style={styles.body}>
           <Text style={styles.heading}>Ulas Mitra</Text>
           <Text style={styles.subtitle}>
-            Bagaimana pengalaman Anda dengan Sriwijaya Rent Car?
+            Bagaimana pengalaman Anda dengan {order?.mitraName || 'mitra ini'}?
           </Text>
           <Card style={styles.mitraCard}>
-            <Text style={styles.mitraName}>Sriwijaya Rent Car</Text>
-            <Text style={styles.mitraMeta}>2.4 km • 842 Reviews • Verified</Text>
+            <Text style={styles.mitraName}>{order?.mitraName || 'Nama mitra belum tersedia'}</Text>
+            <Text style={styles.mitraMeta}>Informasi mitra berasal dari pesanan Anda.</Text>
           </Card>
           <Stars value={mitraRating} onChange={setMitraRating} />
         </View>
       )}
 
       <View style={styles.footer}>
-        <PrimaryButton label={step === 1 ? 'Lanjutkan' : 'Kirim Ulasan'} onPress={submit} />
+        <PrimaryButton
+          label={step === 1 ? 'Lanjutkan' : 'Kirim Ulasan'}
+          loading={submitting}
+          onPress={submit}
+        />
         <Pressable style={styles.skip} onPress={() => navigation.replace('RenterApp')}>
           <Text style={styles.skipText}>Lewati</Text>
         </Pressable>

@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Pressable, StyleSheet, Text, View } from 'react-native';
+import { Alert, Pressable, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { Car, KeyRound, ShieldCheck } from 'lucide-react-native';
@@ -24,8 +24,8 @@ export default function PilihRoleScreen({ navigation }: Props) {
       setLoading(true);
       await updateRole(role);
       navigation.replace(role === 'mitra' ? 'OwnerReg1' : 'RenterApp');
-    } catch {
-      navigation.replace(role === 'mitra' ? 'OwnerReg1' : 'RenterApp');
+    } catch (error) {
+      Alert.alert('Role belum tersimpan', error instanceof Error ? error.message : 'Coba lagi.');
     } finally {
       setLoading(false);
     }

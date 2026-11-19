@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Pressable, StyleSheet, Text, View } from 'react-native';
+import { Alert, Pressable, StyleSheet, Text, View } from 'react-native';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { AlertTriangle, Camera, CheckCircle2, Wrench } from 'lucide-react-native';
 import { RootStackParamList } from '../../navigation/types';
@@ -11,25 +11,63 @@ import { Card } from '../../components/Card';
 import { colors } from '../../theme/colors';
 import { spacing } from '../../theme/spacing';
 import { typography } from '../../theme/typography';
+import { useAuth } from '../../features/auth/useAuth';
+import { pickAndCompressImage, uploadDocument } from '../../lib/storage';
+import { saveInspection } from '../../api/inspections';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'Inspection'>;
 
 const angles = ['Sisi depan', 'Sisi belakang', 'Interior', 'Sisi kanan', 'Sisi kiri'];
-const findings = [
-  { label: 'Bahan bakar', value: 'Sesuai', ok: true },
-  { label: 'Kebersihan', value: 'Sesuai', ok: true },
-  { label: 'Body & cat', value: 'Lecet halus 2 titik', ok: false },
-  { label: 'Ban & interior', value: 'Sesuai', ok: true },
-];
 
 export default function InspectionScreen({ navigation, route }: Props) {
+  const { user } = useAuth();
   const [step, setStep] = useState(1);
   const [approved, setApproved] = useState(false);
+  const [photos, setPhotos] = useState<Record<string, string>>({});
+  const [uploading, setUploading] = useState(false);
 
-  const next = () => {
+  const capture = async (angle: string) => {
+    try {
+      const uri = await pickAndCompressImage([4, 3]);
+      if (uri) {
+        setPhotos((prev) => ({ ...prev, [angle]: uri }));
+      }
+    } catch (error) {
+      Alert.alert('Gagal memilih foto', error instanceof Error ? error.message : 'Coba lagi.');
+    }
+  };
+
+  const next = async () => {
     if (step < 3) {
       setStep(step + 1);
       return;
+    }
+
+    setUploading(true);
+    try {
+      if (user) {
+        const uploads = await Promise.all(
+          Object.values(photos).map((uri) => uploadDocument(user.id, 'vehicle', uri))
+        );
+        await saveInspection({
+          orderId: route.params.id,
+          photos: uploads.map((upload) => upload.path),
+          findings: angles.map((angle) => ({
+            label: angle,
+            value: photos[angle] ? 'Foto terlampir' : 'Tidak ada foto',
+            ok: !!photos[angle],
+          })),
+          damageFee: 0,
+          approved,
+        });
+      } else {
+        throw new Error('Anda harus login untuk menyimpan inspeksi');
+      }
+    } catch (error) {
+      Alert.alert('Gagal menyimpan inspeksi', error instanceof Error ? error.message : 'Coba lagi.');
+      return;
+    } finally {
+      setUploading(false);
     }
     navigation.replace('Rating', { id: route.params.id });
   };
@@ -43,12 +81,13 @@ export default function InspectionScreen({ navigation, route }: Props) {
         <View style={styles.body}>
           <Text style={styles.heading}>Cek Kondisi Kendaraan</Text>
           <Text style={styles.subtitle}>
-            AI akan membandingkan kondisi saat ini dengan data awal untuk memastikan kesesuaian unit.
+            Lampirkan foto kondisi kendaraan. Mitra akan memeriksa kesesuaian unit sebelum
+            menyelesaikan pesanan.
           </Text>
-          <Text style={styles.progress}>2/5 foto terisi</Text>
+          <Text style={styles.progress}>{Object.keys(photos).length}/5 foto terisi</Text>
           <View style={styles.photos}>
             {angles.map((angle) => (
-              <Pressable key={angle} style={styles.photo}>
+              <Pressable key={angle} style={styles.photo} onPress={() => capture(angle)}>
                 <Camera size={20} color={colors.primary} />
                 <Text style={styles.photoText}>{angle}</Text>
               </Pressable>
@@ -59,29 +98,32 @@ export default function InspectionScreen({ navigation, route }: Props) {
 
       {step === 2 ? (
         <View style={styles.body}>
-          <Text style={styles.heading}>Pemeriksaan Selesai</Text>
+          <Text style={styles.heading}>Ringkasan Unggahan</Text>
           <Text style={styles.subtitle}>
-            Berikut laporan rincian akhir mengenai bahan bakar, kebersihan, dan kondisi fisik kendaraan.
+            Foto berikut akan menjadi bukti kondisi kendaraan saat dikembalikan.
           </Text>
           <Card style={styles.findings}>
-            {findings.map((item) => (
-              <View key={item.label} style={styles.findingRow}>
-                {item.ok ? (
-                  <CheckCircle2 size={18} color={colors.success} />
-                ) : (
-                  <Wrench size={18} color={colors.warning} />
-                )}
-                <Text style={styles.findingLabel}>{item.label}</Text>
-                <Text style={[styles.findingValue, !item.ok && styles.findingWarning]}>
-                  {item.value}
-                </Text>
-              </View>
-            ))}
+            {angles.map((angle) => {
+              const ok = !!photos[angle];
+              return (
+                <View key={angle} style={styles.findingRow}>
+                  {ok ? (
+                    <CheckCircle2 size={18} color={colors.success} />
+                  ) : (
+                    <Wrench size={18} color={colors.warning} />
+                  )}
+                  <Text style={styles.findingLabel}>{angle}</Text>
+                  <Text style={[styles.findingValue, !ok && styles.findingWarning]}>
+                    {ok ? 'Foto terlampir' : 'Tidak ada foto'}
+                  </Text>
+                </View>
+              );
+            })}
             <View style={styles.divider} />
             <View style={styles.findingRow}>
               <AlertTriangle size={18} color={colors.warning} />
-              <Text style={styles.findingLabel}>Denda Kerusakan & Lecet</Text>
-              <Text style={styles.findingWarning}>Rp 150.000</Text>
+              <Text style={styles.findingLabel}>Biaya tambahan</Text>
+              <Text style={styles.findingValue}>Ditentukan mitra</Text>
             </View>
           </Card>
         </View>
@@ -91,18 +133,18 @@ export default function InspectionScreen({ navigation, route }: Props) {
         <View style={styles.body}>
           <Text style={styles.heading}>Konfirmasi Hasil Pemeriksaan</Text>
           <Text style={styles.subtitle}>
-            Jika Anda merasa hasil analisis AI tidak sesuai dengan kondisi asli, silakan hubungi mitra.
+            Konfirmasi bahwa foto kondisi kendaraan sudah sesuai sebelum dikirim ke mitra.
           </Text>
           <Card style={styles.total}>
             <Text style={styles.totalLabel}>TOTAL PEMBAYARAN</Text>
-            <Text style={styles.totalValue}>Rp 150.000</Text>
+            <Text style={styles.totalValue}>Belum ada biaya tambahan</Text>
           </Card>
           <Pressable style={styles.agree} onPress={() => setApproved((v) => !v)}>
             <View style={[styles.checkbox, approved && styles.checkboxActive]}>
               {approved ? <CheckCircle2 size={14} color={colors.text.white} /> : null}
             </View>
             <Text style={styles.agreeText}>
-              Dengan menekan Setuju, Anda menyetujui rincian biaya yang telah ditetapkan oleh sistem.
+              Dengan menekan Setuju, Anda mengirim hasil pengecekan kepada mitra untuk ditinjau.
             </Text>
           </Pressable>
         </View>
@@ -112,6 +154,7 @@ export default function InspectionScreen({ navigation, route }: Props) {
         <PrimaryButton
           label={step === 3 ? 'Setuju & Selesai' : 'Lanjutkan'}
           disabled={step === 3 && !approved}
+          loading={uploading}
           onPress={next}
         />
       </View>

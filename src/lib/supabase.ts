@@ -1,11 +1,15 @@
 import { createClient } from '@supabase/supabase-js';
 import * as SecureStore from 'expo-secure-store';
+import { Platform } from 'react-native';
 import { env } from './env';
 
 const CHUNK_SIZE = 1800;
 
 const chunkedStorage = {
   async getItem(key: string): Promise<string | null> {
+    if (Platform.OS === 'web') {
+      return globalThis.localStorage?.getItem(key) ?? null;
+    }
     const count = await SecureStore.getItemAsync(`${key}.count`);
     if (!count) return null;
     const total = Number.parseInt(count, 10);
@@ -18,6 +22,10 @@ const chunkedStorage = {
     return parts.join('');
   },
   async setItem(key: string, value: string): Promise<void> {
+    if (Platform.OS === 'web') {
+      globalThis.localStorage?.setItem(key, value);
+      return;
+    }
     const parts = value.match(new RegExp(`.{1,${CHUNK_SIZE}}`, 'g')) ?? [];
     await SecureStore.setItemAsync(`${key}.count`, String(parts.length));
     await Promise.all(
@@ -25,6 +33,10 @@ const chunkedStorage = {
     );
   },
   async removeItem(key: string): Promise<void> {
+    if (Platform.OS === 'web') {
+      globalThis.localStorage?.removeItem(key);
+      return;
+    }
     const count = await SecureStore.getItemAsync(`${key}.count`);
     if (count) {
       const total = Number.parseInt(count, 10);
@@ -43,6 +55,6 @@ export const supabase = createClient(env.supabaseUrl, env.supabaseAnonKey, {
     storage: chunkedStorage,
     autoRefreshToken: true,
     persistSession: true,
-    detectSessionInUrl: false,
+    detectSessionInUrl: Platform.OS === 'web',
   },
 });

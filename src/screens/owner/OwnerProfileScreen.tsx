@@ -19,35 +19,58 @@ import { ListItem } from '../../components/ListItem';
 import { colors } from '../../theme/colors';
 import { spacing } from '../../theme/spacing';
 import { typography } from '../../theme/typography';
+import { useOrders } from '../../hooks/useOrders';
+import { useVehicles } from '../../hooks/useVehicles';
+import { useMitraRating, useMyMitraProfile } from '../../hooks/useMitras';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'OwnerApp'>;
 
 export default function OwnerProfileScreen({ navigation }: Props) {
   const { user, profile, signOut } = useAuth();
+  const { data: mitraProfile } = useMyMitraProfile(user?.id);
+  const { data: vehicles = [] } = useVehicles(user?.id);
+  const { data: orders = [] } = useOrders('mitra', user?.id);
+  const { data: rating } = useMitraRating(user?.id);
+  const verification =
+    mitraProfile?.verification === 'verified'
+      ? 'Terverifikasi'
+      : mitraProfile?.verification === 'rejected'
+        ? 'Verifikasi ditolak'
+        : 'Menunggu verifikasi';
   return (
     <Screen scroll>
       <View style={styles.header}>
         <View style={styles.avatar}>
-          <Text style={styles.avatarText}>SR</Text>
+          <Text style={styles.avatarText}>{(profile?.full_name || user?.email || 'M').slice(0, 2).toUpperCase()}</Text>
         </View>
         <View style={styles.headerText}>
-          <Text style={styles.name}>{profile?.full_name || user?.email?.split('@')[0] || 'Mitra Vehigo'}</Text>
-          <Text style={styles.role}>Mitra â€¢ Terverifikasi</Text>
+          <Text style={styles.name}>{profile?.full_name || user?.email?.split('@')[0] || 'Profil belum dilengkapi'}</Text>
+        <Text style={styles.role}>Mitra • {verification}</Text>
         </View>
         <Star size={18} color={colors.secondary} />
-        <Text style={styles.rating}>4.9</Text>
+        <Text style={styles.rating}>{rating?.average ? rating.average.toFixed(1) : '-'}</Text>
       </View>
 
       <Card style={styles.stats}>
-        <Stat label="Armada" value="8" />
-        <Stat label="Pesanan" value="2.4k" />
-        <Stat label="Tahun" value="7 Th." />
+        <Stat label="Armada" value={String(vehicles.length)} />
+        <Stat label="Pesanan" value={String(orders.length)} />
+        <Stat label="Ulasan" value={String(rating?.count ?? 0)} />
       </Card>
 
       <View style={styles.section}>
         <Text style={styles.sectionTitle}>Akun</Text>
-        <ListItem icon={User} title="Profil Mitra" subtitle="Ubah data usaha" onPress={() => {}} />
-        <ListItem icon={CreditCard} title="Metode Pembayaran" subtitle="Rekening & e-wallet" onPress={() => {}} />
+        <ListItem
+          icon={User}
+          title="Profil Mitra"
+          subtitle="Ubah data usaha"
+          onPress={() => navigation.navigate('OwnerBusinessProfile')}
+        />
+        <ListItem
+          icon={CreditCard}
+          title="Metode Pembayaran"
+          subtitle="Rekening & e-wallet"
+          onPress={() => navigation.navigate('OwnerBusinessProfile')}
+        />
         <ListItem icon={ShieldCheck} title="Keamanan Akun" subtitle="Verifikasi & kata sandi" onPress={() => navigation.navigate('OwnerVerification')} />
       </View>
 

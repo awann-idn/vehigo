@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { StyleSheet, Text, View } from 'react-native';
+import { Alert, StyleSheet, Text, View } from 'react-native';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { Car, CalendarDays } from 'lucide-react-native';
 import { RootStackParamList } from '../../navigation/types';
@@ -12,15 +12,81 @@ import { Card } from '../../components/Card';
 import { colors } from '../../theme/colors';
 import { spacing } from '../../theme/spacing';
 import { typography } from '../../theme/typography';
-import { formatRupiah, vehicles } from '../../data/mock';
+import { formatRupiah } from '../../lib/formatters';
+import { useAuth } from '../../features/auth/useAuth';
+import { useVehicle } from '../../hooks/useVehicles';
+import { useCreateOrder } from '../../hooks/useOrders';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'BookingCheckout'>;
 
 export default function BookingCheckoutScreen({ navigation, route }: Props) {
-  const vehicle = vehicles.find((item) => item.id === route.params.vehicleId) ?? vehicles[0];
+  const { user } = useAuth();
+  const { data: vehicle, isLoading: vehicleLoading, isError: vehicleError } = useVehicle(route.params.vehicleId);
+  const createOrder = useCreateOrder();
   const [method, setMethod] = useState('Lepas Kunci');
-  const days = 3;
-  const total = vehicle.pricePerDay * days + 50000;
+
+  const [period] = useState(() => {
+    const start = route.params.startDate ? new Date(`${route.params.startDate}T00:00:00`) : new Date();
+    const end = route.params.endDate ? new Date(`${route.params.endDate}T00:00:00`) : new Date(start);
+    if (!route.params.endDate) end.setDate(end.getDate() + 1);
+    const days = Math.max(1, Math.ceil((end.getTime() - start.getTime()) / 86400000));
+    const label = (date: Date) =>
+      date.toLocaleDateString('id-ID', { day: 'numeric', month: 'short', year: 'numeric' });
+    const iso = (date: Date) =>
+      `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(
+        date.getDate()
+      ).padStart(2, '0')}`;
+    return {
+      start: iso(start),
+      end: iso(end),
+      days,
+      startLabel: label(start),
+      endLabel: label(end),
+    };
+  });
+
+  if (vehicleLoading) {
+    return <Screen><Text style={styles.meta}>Memuat kendaraan...</Text></Screen>;
+  }
+
+  if (vehicleError || !vehicle) {
+    return <Screen><Text style={styles.meta}>Kendaraan tidak dapat dimuat.</Text></Screen>;
+  }
+
+  const subtotal = vehicle.pricePerDay * period.days;
+  const total = subtotal;
+
+  const submit = () => {
+    if (!user) {
+      Alert.alert('Masuk dulu', 'Silakan masuk untuk melanjutkan pemesanan.');
+      return;
+    }
+
+    createOrder.mutate(
+      {
+        renter_id: user.id,
+        mitra_id: vehicle.mitraId,
+        vehicle_id: vehicle.id,
+        start_date: period.start,
+        end_date: period.end,
+        days: period.days,
+        daily_price: vehicle.pricePerDay,
+        subtotal,
+        deposit: 0,
+        total,
+        payment_method: method,
+      },
+      {
+        onSuccess: (order) =>
+          navigation.navigate('BookingPayment', {
+            vehicleId: vehicle.id,
+            orderId: order.id,
+            total: order.total,
+          }),
+        onError: (error) => Alert.alert('Gagal membuat pesanan', error.message),
+      }
+    );
+  };
 
   return (
     <Screen scroll>
@@ -42,12 +108,12 @@ export default function BookingCheckoutScreen({ navigation, route }: Props) {
         <View style={styles.dateCol}>
           <CalendarDays size={16} color={colors.primary} />
           <Text style={styles.dateLabel}>TANGGAL MULAI</Text>
-          <Text style={styles.dateValue}>25 Des 2023</Text>
+          <Text style={styles.dateValue}>{period.startLabel}</Text>
         </View>
         <View style={styles.dateCol}>
           <CalendarDays size={16} color={colors.primary} />
           <Text style={styles.dateLabel}>TANGGAL SELESAI</Text>
-          <Text style={styles.dateValue}>1 Jan 2024</Text>
+          <Text style={styles.dateValue}>{period.endLabel}</Text>
         </View>
       </View>
 
@@ -55,15 +121,15 @@ export default function BookingCheckoutScreen({ navigation, route }: Props) {
       <SegmentedTabs options={['Lepas Kunci', 'Dengan Driver']} value={method} onChange={setMethod} />
 
       <Card style={styles.summary}>
-        <Row label="Biaya sewa (3 hari)" value={formatRupiah(vehicle.pricePerDay * days)} />
-        <Row label="Asuransi" value={formatRupiah(50000)} />
+        <Row label={`Biaya sewa (${period.days} hari)`} value={formatRupiah(subtotal)} />
         <View style={styles.divider} />
         <Row label="Total" value={formatRupiah(total)} bold />
       </Card>
 
       <PrimaryButton
         label="Lanjut ke Pembayaran"
-        onPress={() => navigation.navigate('BookingPayment', { vehicleId: vehicle.id })}
+        onPress={submit}
+        loading={createOrder.isPending}
       />
     </Screen>
   );

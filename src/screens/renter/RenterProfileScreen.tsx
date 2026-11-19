@@ -1,6 +1,6 @@
 import React from 'react';
 import { useAuth } from '../../features/auth/useAuth';
-import { Pressable, StyleSheet, Text, View } from 'react-native';
+import { Alert, Pressable, StyleSheet, Text, View } from 'react-native';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import {
   Bell,
@@ -27,10 +27,10 @@ export default function RenterProfileScreen({ navigation }: Props) {
     <Screen scroll>
       <View style={styles.header}>
         <View style={styles.avatar}>
-          <Text style={styles.avatarText}>BS</Text>
+          <Text style={styles.avatarText}>{(profile?.full_name || user?.email || 'P').slice(0, 2).toUpperCase()}</Text>
         </View>
         <View style={styles.headerText}>
-          <Text style={styles.name}>{profile?.full_name || user?.email?.split('@')[0] || 'Tamu Vehigo'}</Text>
+          <Text style={styles.name}>{profile?.full_name || user?.email?.split('@')[0] || 'Profil belum dilengkapi'}</Text>
           <Text style={styles.role}>{profile?.role === 'mitra' ? 'Mitra' : 'Penyewa'}</Text>
         </View>
         <ChevronRight size={18} color={colors.text.muted} />
@@ -38,16 +38,31 @@ export default function RenterProfileScreen({ navigation }: Props) {
 
       <View style={styles.section}>
         <Text style={styles.sectionTitle}>Akun</Text>
-        <ListItem icon={User} title="Profil Saya" subtitle="Ubah data diri" onPress={() => {}} />
-        <ListItem icon={ShieldCheck} title="Verifikasi Identitas" subtitle="KTP & SIM" onPress={() => {}} />
-        <ListItem icon={CreditCard} title="Metode Pembayaran" subtitle="E-wallet & bank" onPress={() => {}} />
+        <ListItem
+          icon={User}
+          title="Profil Saya"
+          subtitle={profile?.phone ? `Ubah data diri • ${profile.phone}` : 'Ubah data diri'}
+          onPress={() => navigation.navigate('RenterProfileEdit')}
+        />
+        <ListItem
+          icon={ShieldCheck}
+          title="Verifikasi Identitas"
+          subtitle="Unggah KTP & SIM"
+          onPress={() => navigation.navigate('RenterVerification')}
+        />
+        <ListItem
+          icon={CreditCard}
+          title="Metode Pembayaran"
+          subtitle="Gateway pembayaran belum aktif"
+          onPress={() => Alert.alert('Pembayaran', 'Payment gateway belum tersedia. Pesanan tetap berstatus menunggu pembayaran.')}
+        />
       </View>
 
       <View style={styles.section}>
         <Text style={styles.sectionTitle}>Preferensi</Text>
-        <ListItem icon={Bell} title="Notifikasi" onPress={() => navigation.navigate('RenterApp')} />
-        <ListItem icon={Settings} title="Pengaturan Aplikasi" onPress={() => {}} />
-        <ListItem icon={HelpCircle} title="Pusat Bantuan" onPress={() => {}} />
+        <ListItem icon={Bell} title="Notifikasi" onPress={() => navigation.navigate('Notifikasi' as never)} />
+        <ListItem icon={Settings} title="Pengaturan Aplikasi" onPress={() => Alert.alert('Segera tersedia', 'Pengaturan aplikasi belum termasuk trial inti.')} />
+        <ListItem icon={HelpCircle} title="Pusat Bantuan" onPress={() => Alert.alert('Pusat Bantuan', 'Hubungi admin Vehigo melalui chat pada pesanan aktif.')} />
         <ListItem icon={ShieldCheck} title="Syarat & Ketentuan" onPress={() => navigation.navigate('Terms')} />
       </View>
 

@@ -10,11 +10,13 @@ import { typography } from '../../../theme/typography';
 import { RegistrationLayout } from './RegistrationLayout';
 import { pickAndCompressImage, uploadDocument } from '../../../lib/storage';
 import { useAuth } from '../../../features/auth/useAuth';
+import { useRegistrationStore } from '../../../features/owner/registrationStore';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'OwnerReg1'>;
 
 export default function OwnerReg1Screen({ navigation }: Props) {
-  const [name, setName] = useState('');
+  const ownerName = useRegistrationStore((state) => state.ownerName);
+  const updateRegistration = useRegistrationStore((state) => state.update);
   const [nik, setNik] = useState('');
   const [imageUri, setImageUri] = useState<string | null>(null);
   const [uploading, setUploading] = useState(false);
@@ -56,8 +58,8 @@ export default function OwnerReg1Screen({ navigation }: Props) {
       <TextField
         label="Nama Lengkap (Sesuai KTP)"
         placeholder="Ari Wijaya"
-        value={name}
-        onChangeText={setName}
+        value={ownerName}
+        onChangeText={(value) => updateRegistration({ ownerName: value })}
       />
       <TextField
         label="NIK (16 Digit)"

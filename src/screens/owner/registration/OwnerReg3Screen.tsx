@@ -8,6 +8,7 @@ import { colors } from '../../../theme/colors';
 import { spacing } from '../../../theme/spacing';
 import { typography } from '../../../theme/typography';
 import { RegistrationLayout } from './RegistrationLayout';
+import { useRegistrationStore } from '../../../features/owner/registrationStore';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'OwnerReg3'>;
 
@@ -19,7 +20,8 @@ const terms = [
 ];
 
 export default function OwnerReg3Screen({ navigation }: Props) {
-  const [address, setAddress] = useState('');
+  const address = useRegistrationStore((state) => state.address);
+  const updateRegistration = useRegistrationStore((state) => state.update);
   const [termsVisible, setTermsVisible] = useState(false);
 
   return (
@@ -35,7 +37,7 @@ export default function OwnerReg3Screen({ navigation }: Props) {
         placeholder="Jl. Talang Kelapa, Alang-Alang Lebar, Palembang - 30153"
         multiline
         value={address}
-        onChangeText={setAddress}
+        onChangeText={(value) => updateRegistration({ address: value })}
         style={styles.multiline}
       />
 

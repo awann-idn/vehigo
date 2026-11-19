@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { Pressable, StyleSheet, Text, View } from 'react-native';
+import React from 'react';
+import { Alert, Pressable, StyleSheet, Text, View } from 'react-native';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { Banknote, Wallet } from 'lucide-react-native';
 import { RootStackParamList } from '../../../navigation/types';
@@ -8,13 +8,53 @@ import { colors } from '../../../theme/colors';
 import { spacing } from '../../../theme/spacing';
 import { typography } from '../../../theme/typography';
 import { RegistrationLayout } from './RegistrationLayout';
+import { useRegistrationStore } from '../../../features/owner/registrationStore';
+import { useSaveMitraRegistration } from '../../../hooks/useMitras';
+import { useAuth } from '../../../features/auth/useAuth';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'OwnerReg5'>;
-type Method = 'bank' | 'ewallet';
-
 export default function OwnerReg5Screen({ navigation }: Props) {
-  const [method, setMethod] = useState<Method>('bank');
-  const [account, setAccount] = useState('');
+  const { user, refreshProfile } = useAuth();
+  const method = useRegistrationStore((state) => state.payoutMethod);
+  const account = useRegistrationStore((state) => state.accountNumber);
+  const accountHolder = useRegistrationStore((state) => state.accountHolder);
+  const registration = useRegistrationStore();
+  const resetRegistration = useRegistrationStore((state) => state.reset);
+  const updateRegistration = useRegistrationStore((state) => state.update);
+  const saveRegistration = useSaveMitraRegistration();
+
+  const finish = async () => {
+    if (!user) {
+      Alert.alert('Login diperlukan', 'Silakan masuk ulang untuk menyelesaikan pendaftaran.');
+      return;
+    }
+    if (!registration.businessName.trim() || !registration.ownerName.trim()) {
+      Alert.alert('Data belum lengkap', 'Nama pemilik dan nama usaha wajib diisi.');
+      return;
+    }
+    if (!account.trim() || !accountHolder.trim()) {
+      Alert.alert('Data rekening belum lengkap', 'Nomor rekening dan nama pemilik wajib diisi.');
+      return;
+    }
+
+    try {
+      await saveRegistration.mutateAsync({
+        userId: user.id,
+        ownerName: registration.ownerName,
+        businessName: registration.businessName,
+        address: registration.address,
+        phone: registration.phone,
+        payoutMethod: method,
+        accountNumber: account,
+        accountHolder,
+      });
+      await refreshProfile();
+      resetRegistration();
+      navigation.navigate('OwnerVerification');
+    } catch (error) {
+      Alert.alert('Pendaftaran gagal', error instanceof Error ? error.message : 'Coba lagi.');
+    }
+  };
 
   return (
     <RegistrationLayout
@@ -22,13 +62,13 @@ export default function OwnerReg5Screen({ navigation }: Props) {
       heading="Informasi Keuangan"
       subheading="Pilih metode untuk menerima pendapatan sewa Anda."
       onBack={() => navigation.goBack()}
-      onNext={() => navigation.navigate('OwnerVerification')}
+      onNext={finish}
       nextLabel="Selesaikan Pendaftaran"
     >
       <View style={styles.methods}>
         <Pressable
           style={[styles.method, method === 'bank' && styles.methodActive]}
-          onPress={() => setMethod('bank')}
+          onPress={() => updateRegistration({ payoutMethod: 'bank' })}
         >
           <Banknote size={24} color={method === 'bank' ? colors.text.white : colors.primary} />
           <Text style={[styles.methodTitle, method === 'bank' && styles.methodTitleActive]}>
@@ -40,7 +80,7 @@ export default function OwnerReg5Screen({ navigation }: Props) {
         </Pressable>
         <Pressable
           style={[styles.method, method === 'ewallet' && styles.methodActive]}
-          onPress={() => setMethod('ewallet')}
+          onPress={() => updateRegistration({ payoutMethod: 'ewallet' })}
         >
           <Wallet size={24} color={method === 'ewallet' ? colors.text.white : colors.primary} />
           <Text style={[styles.methodTitle, method === 'ewallet' && styles.methodTitleActive]}>
@@ -57,11 +97,13 @@ export default function OwnerReg5Screen({ navigation }: Props) {
         placeholder={method === 'bank' ? '0000 0000 0000' : '0812 3456 7890'}
         keyboardType="number-pad"
         value={account}
-        onChangeText={setAccount}
+        onChangeText={(value) => updateRegistration({ accountNumber: value })}
       />
       <TextField
         label={method === 'bank' ? 'Nama Pemilik Rekening' : 'Nama Terdaftar'}
         placeholder="Sesuai buku tabungan / akun e-wallet"
+        value={accountHolder}
+        onChangeText={(value) => updateRegistration({ accountHolder: value })}
       />
 
       <View style={styles.summary}>

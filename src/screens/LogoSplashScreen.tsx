@@ -27,7 +27,9 @@ export default function LogoSplashScreen({ navigation }: Props) {
 
     const timer = setTimeout(() => {
       if (session) {
-        if (profile?.role === 'mitra') {
+        if (profile?.role === 'admin') {
+          navigation.replace('AdminApp');
+        } else if (profile?.role === 'mitra') {
           navigation.replace('OwnerApp');
         } else if (profile?.role === 'penyewa') {
           navigation.replace('RenterApp');

@@ -18,8 +18,10 @@ import OwnerReg3Screen from '../screens/owner/registration/OwnerReg3Screen';
 import OwnerReg4Screen from '../screens/owner/registration/OwnerReg4Screen';
 import OwnerReg5Screen from '../screens/owner/registration/OwnerReg5Screen';
 import OwnerVerificationScreen from '../screens/owner/OwnerVerificationScreen';
+import OwnerBusinessProfileScreen from '../screens/owner/OwnerBusinessProfileScreen';
 import OwnerOrderDetailScreen from '../screens/owner/OwnerOrderDetailScreen';
 import OwnerVehicleDetailScreen from '../screens/owner/OwnerVehicleDetailScreen';
+import OwnerAvailabilityScreen from '../screens/owner/OwnerAvailabilityScreen';
 import OwnerAddVehicleScreen from '../screens/owner/OwnerAddVehicleScreen';
 
 import SearchResultsScreen from '../screens/renter/SearchResultsScreen';
@@ -36,9 +38,12 @@ import RenterOrderDetailScreen from '../screens/renter/RenterOrderDetailScreen';
 import InspectionScreen from '../screens/renter/InspectionScreen';
 import RatingScreen from '../screens/renter/RatingScreen';
 import ChatDetailScreen from '../screens/renter/ChatDetailScreen';
+import RenterProfileEditScreen from '../screens/renter/RenterProfileEditScreen';
+import RenterVerificationScreen from '../screens/renter/RenterVerificationScreen';
 
 import OwnerTabs from './OwnerTabs';
 import RenterTabs from './RenterTabs';
+import AdminDashboardScreen from '../screens/admin/AdminDashboardScreen';
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
 
@@ -67,10 +72,13 @@ export default function AppNavigator() {
         <Stack.Screen name="OwnerReg4" component={OwnerReg4Screen} />
         <Stack.Screen name="OwnerReg5" component={OwnerReg5Screen} />
         <Stack.Screen name="OwnerVerification" component={OwnerVerificationScreen} />
+        <Stack.Screen name="OwnerBusinessProfile" component={OwnerBusinessProfileScreen} />
         <Stack.Screen name="OwnerApp" component={OwnerTabs} />
         <Stack.Screen name="RenterApp" component={RenterTabs} />
+        <Stack.Screen name="AdminApp" component={AdminDashboardScreen} />
         <Stack.Screen name="OwnerOrderDetail" component={OwnerOrderDetailScreen} />
         <Stack.Screen name="OwnerVehicleDetail" component={OwnerVehicleDetailScreen} />
+        <Stack.Screen name="OwnerAvailability" component={OwnerAvailabilityScreen} />
         <Stack.Screen name="OwnerAddVehicle" component={OwnerAddVehicleScreen} />
 
         <Stack.Screen name="VehicleDetail" component={VehicleDetailScreen} />
@@ -87,6 +95,8 @@ export default function AppNavigator() {
         <Stack.Screen name="Inspection" component={InspectionScreen} />
         <Stack.Screen name="Rating" component={RatingScreen} />
         <Stack.Screen name="ChatDetail" component={ChatDetailScreen} />
+        <Stack.Screen name="RenterProfileEdit" component={RenterProfileEditScreen} />
+        <Stack.Screen name="RenterVerification" component={RenterVerificationScreen} />
       </Stack.Navigator>
     </NavigationContainer>
   );

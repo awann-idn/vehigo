@@ -13,41 +13,63 @@ import { spacing } from '../theme/spacing';
 import { typography } from '../theme/typography';
 import { supabase } from '../lib/supabase';
 import { mapAuthError } from '../lib/authErrors';
+import { useAuth } from '../features/auth/useAuth';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'Login'>;
 
 export default function LoginScreen({ navigation }: Props) {
+  const { refreshProfile } = useAuth();
   const [identifier, setIdentifier] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
 
   const handleLogin = async () => {
-    if (!identifier.trim() || !password) {
+    const email = identifier.trim().toLowerCase();
+    if (!email || !password) {
       Alert.alert('Perhatian', 'Harap masukkan email dan kata sandi.');
+      return;
+    }
+    if (!/^\S+@\S+\.\S+$/.test(email)) {
+      Alert.alert('Email tidak valid', 'Gunakan alamat email yang sama persis dengan saat mendaftar.');
       return;
     }
 
     try {
       setLoading(true);
       const { data, error } = await supabase.auth.signInWithPassword({
-        email: identifier.trim(),
+        email,
         password,
       });
 
       if (error) {
-        Alert.alert('Gagal Masuk', mapAuthError(error));
+        Alert.alert(
+          'Login ditolak Supabase',
+          `${mapAuthError(error)}\n\nDetail server: ${error.message}`
+        );
+        return;
+      }
+
+      if (!data.session) {
+        Alert.alert('Email belum dikonfirmasi', 'Buka link konfirmasi dari email Supabase terlebih dahulu, lalu coba login lagi.');
         return;
       }
 
       if (data.user) {
         // Cek profile role
-        const { data: profile } = await supabase
+        const { data: profile, error: profileError } = await supabase
           .from('profiles')
           .select('role')
           .eq('id', data.user.id)
-          .single();
+          .maybeSingle();
 
-        if (profile?.role === 'mitra') {
+        if (profileError) {
+          Alert.alert('Profile belum tersedia', `Akun berhasil login, tetapi profile belum bisa dibaca. Jalankan migration trigger profile di Supabase.\n\nDetail server: ${profileError.message}`);
+          return;
+        }
+
+        if (profile?.role === 'admin') {
+          navigation.replace('AdminApp');
+        } else if (profile?.role === 'mitra') {
           navigation.replace('OwnerApp');
         } else if (profile?.role === 'penyewa') {
           navigation.replace('RenterApp');
@@ -63,19 +85,7 @@ export default function LoginScreen({ navigation }: Props) {
   };
 
   const handleGuest = async () => {
-    try {
-      setLoading(true);
-      const { error } = await supabase.auth.signInAnonymously();
-      if (error) {
-        // Fallback jika anonymous auth belum aktif di Supabase dashboard
-        console.warn('Anonymous auth failed:', error.message);
-      }
-      navigation.navigate('RenterApp');
-    } catch {
-      navigation.navigate('RenterApp');
-    } finally {
-      setLoading(false);
-    }
+    Alert.alert('Login diperlukan', 'Buat akun atau masuk untuk menggunakan Vehigo.');
   };
 
   return (
@@ -91,7 +101,7 @@ export default function LoginScreen({ navigation }: Props) {
 
       <View style={styles.form}>
         <TextField
-          label="Email atau No. Telepon"
+          label="Email"
           icon={Mail}
           placeholder="nama@email.com"
           autoCapitalize="none"
@@ -109,8 +119,23 @@ export default function LoginScreen({ navigation }: Props) {
             value={password}
             onChangeText={setPassword}
           />
-          <Pressable style={styles.forgot} hitSlop={8}>
-            <Text style={styles.forgotText}>Lupa Sandi?</Text>
+          <Pressable
+            style={styles.forgot}
+            hitSlop={8}
+            onPress={async () => {
+              const email = identifier.trim().toLowerCase();
+              if (!/^\S+@\S+\.\S+$/.test(email)) {
+                Alert.alert('Email diperlukan', 'Masukkan email terlebih dahulu.');
+                return;
+              }
+              const { error } = await supabase.auth.resend({ type: 'signup', email });
+              Alert.alert(
+                error ? 'Gagal mengirim email' : 'Email dikirim',
+                error ? mapAuthError(error) : 'Cek inbox untuk link konfirmasi akun.'
+              );
+            }}
+          >
+            <Text style={styles.forgotText}>Kirim ulang konfirmasi</Text>
           </Pressable>
         </View>
 
@@ -120,7 +145,24 @@ export default function LoginScreen({ navigation }: Props) {
           disabled={loading}
         />
 
-        <SocialAuthRow />
+        <SocialAuthRow onSignedIn={async () => {
+          await refreshProfile();
+          const { data: { user } } = await supabase.auth.getUser();
+          if (!user) return;
+          const { data: profile, error } = await supabase
+            .from('profiles')
+            .select('role')
+            .eq('id', user.id)
+            .maybeSingle();
+          if (error) {
+            Alert.alert('Profil belum dapat dimuat', error.message);
+            return;
+          }
+          if (profile?.role === 'admin') navigation.replace('AdminApp');
+          else if (profile?.role === 'mitra') navigation.replace('OwnerApp');
+          else if (profile?.role === 'penyewa') navigation.replace('RenterApp');
+          else navigation.replace('PilihRole');
+        }} />
 
         <Pressable style={styles.linkRow} onPress={() => navigation.navigate('SignUp')}>
           <Text style={styles.linkMuted}>Belum punya akun? </Text>

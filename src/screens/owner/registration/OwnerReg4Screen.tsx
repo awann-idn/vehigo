@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React from 'react';
 import { StyleSheet, Text } from 'react-native';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { Mail, MessageCircle } from 'lucide-react-native';
@@ -8,12 +8,14 @@ import { colors } from '../../../theme/colors';
 import { spacing } from '../../../theme/spacing';
 import { typography } from '../../../theme/typography';
 import { RegistrationLayout } from './RegistrationLayout';
+import { useRegistrationStore } from '../../../features/owner/registrationStore';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'OwnerReg4'>;
 
 export default function OwnerReg4Screen({ navigation }: Props) {
-  const [phone, setPhone] = useState('');
-  const [email, setEmail] = useState('');
+  const phone = useRegistrationStore((state) => state.phone);
+  const email = useRegistrationStore((state) => state.email);
+  const updateRegistration = useRegistrationStore((state) => state.update);
 
   return (
     <RegistrationLayout
@@ -29,7 +31,7 @@ export default function OwnerReg4Screen({ navigation }: Props) {
         placeholder="812 3456 7890"
         keyboardType="phone-pad"
         value={phone}
-        onChangeText={setPhone}
+        onChangeText={(value) => updateRegistration({ phone: value })}
       />
       <Text style={styles.note}>
         *Kode verifikasi akan dikirimkan melalui pesan WhatsApp ke nomor yang terdaftar.
@@ -41,7 +43,7 @@ export default function OwnerReg4Screen({ navigation }: Props) {
         autoCapitalize="none"
         keyboardType="email-address"
         value={email}
-        onChangeText={setEmail}
+        onChangeText={(value) => updateRegistration({ email: value })}
       />
     </RegistrationLayout>
   );

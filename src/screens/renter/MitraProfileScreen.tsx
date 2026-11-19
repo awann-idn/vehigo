@@ -1,5 +1,5 @@
 import React from 'react';
-import { StyleSheet, Text, View } from 'react-native';
+import { ActivityIndicator, StyleSheet, Text, View } from 'react-native';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { Car, Star } from 'lucide-react-native';
 import { RootStackParamList } from '../../navigation/types';
@@ -9,12 +9,24 @@ import { Card } from '../../components/Card';
 import { colors } from '../../theme/colors';
 import { spacing } from '../../theme/spacing';
 import { typography } from '../../theme/typography';
-import { mitras, reviews, vehicles } from '../../data/mock';
+import { useMitras } from '../../hooks/useMitras';
+import { useVehicles } from '../../hooks/useVehicles';
+import { useReviews } from '../../hooks/useReviews';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'MitraProfile'>;
 
 export default function MitraProfileScreen({ navigation, route }: Props) {
-  const mitra = mitras.find((item) => item.id === route.params.id) ?? mitras[0];
+  const { data: mitras = [], isLoading: loadingMitra } = useMitras();
+  const { data: vehicles = [], isLoading: loadingVehicles } = useVehicles(route.params.id);
+  const { data: reviews = [] } = useReviews('mitra', route.params.id);
+  const mitra = mitras.find((item) => item.id === route.params.id);
+
+  if (loadingMitra || loadingVehicles) {
+    return <Screen><AppHeader title="Profil Mitra" onBack={() => navigation.goBack()} /><ActivityIndicator /></Screen>;
+  }
+  if (!mitra) {
+    return <Screen><AppHeader title="Profil Mitra" onBack={() => navigation.goBack()} /><Text style={styles.meta}>Mitra tidak ditemukan.</Text></Screen>;
+  }
 
   return (
     <Screen scroll>
@@ -51,6 +63,7 @@ export default function MitraProfileScreen({ navigation, route }: Props) {
           </View>
         </View>
       ))}
+      {vehicles.length === 0 && <Text style={styles.meta}>Belum ada unit tersedia.</Text>}
 
       <Text style={styles.sectionTitle}>Ulasan</Text>
       {reviews.slice(0, 2).map((review) => (
@@ -60,6 +73,7 @@ export default function MitraProfileScreen({ navigation, route }: Props) {
           <Text style={styles.reviewBody}>{review.body}</Text>
         </View>
       ))}
+      {reviews.length === 0 && <Text style={styles.meta}>Belum ada ulasan.</Text>}
 
       <View style={styles.note}>
         <Text style={styles.noteText}>

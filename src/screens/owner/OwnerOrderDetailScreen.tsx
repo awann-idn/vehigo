@@ -1,5 +1,5 @@
 import React from 'react';
-import { StyleSheet, Text, View } from 'react-native';
+import { ActivityIndicator, Alert, StyleSheet, Text, View } from 'react-native';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { Calendar, Car, CreditCard, MessageCircle, Phone, User } from 'lucide-react-native';
 import { RootStackParamList } from '../../navigation/types';
@@ -11,12 +11,67 @@ import { StatusBadge } from '../../components/StatusBadge';
 import { colors } from '../../theme/colors';
 import { spacing } from '../../theme/spacing';
 import { typography } from '../../theme/typography';
-import { formatRupiah, ownerOrders } from '../../data/mock';
+import { formatRupiah } from '../../lib/formatters';
+import { useOrder, useUpdateOrderStatus } from '../../hooks/useOrders';
+import { useAuth } from '../../features/auth/useAuth';
+import { getOrCreateChat } from '../../api/chat';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'OwnerOrderDetail'>;
 
 export default function OwnerOrderDetailScreen({ navigation, route }: Props) {
-  const order = ownerOrders.find((item) => item.id === route.params.id) ?? ownerOrders[0];
+  const { user } = useAuth();
+  const { data: order, isLoading } = useOrder(route.params.id);
+  const updateStatus = useUpdateOrderStatus();
+
+  const openChat = async () => {
+    if (!user || !order?.renterId || !order?.mitraId) {
+      Alert.alert('Chat tidak tersedia', 'Data pesanan belum lengkap untuk membuka percakapan.');
+      return;
+    }
+    try {
+      const chat = await getOrCreateChat(order.id, order.renterId, order.mitraId);
+      navigation.navigate('ChatDetail', { id: chat.id });
+    } catch (error) {
+      Alert.alert('Chat tidak tersedia', error instanceof Error ? error.message : 'Coba lagi.');
+    }
+  };
+
+  if (isLoading || !order) {
+    return (
+      <Screen>
+        <AppHeader title="Detail Pesanan" onBack={() => navigation.goBack()} />
+        <ActivityIndicator size="large" color={colors.primary} style={{ marginTop: spacing.xl }} />
+      </Screen>
+    );
+  }
+
+  const nextStatus =
+    order.status === 'Belum Bayar'
+      ? ('berlangsung' as const)
+      : order.status === 'Berlangsung' || order.status === 'Denda'
+        ? ('selesai' as const)
+        : null;
+  const actionLabel =
+    order.status === 'Belum Bayar' ? 'Konfirmasi Pesanan' : 'Selesaikan Pesanan';
+
+  const handleConfirm = () => {
+    if (!nextStatus) return;
+    updateStatus.mutate(
+      { id: order.id, status: nextStatus },
+      {
+        onSuccess: () => {
+          Alert.alert(
+            'Sukses',
+            nextStatus === 'berlangsung' ? 'Pesanan berhasil dikonfirmasi.' : 'Pesanan berhasil diselesaikan.'
+          );
+          navigation.goBack();
+        },
+        onError: (err) => {
+          Alert.alert('Error', err.message);
+        },
+      }
+    );
+  };
 
   return (
     <Screen scroll>
@@ -41,8 +96,18 @@ export default function OwnerOrderDetailScreen({ navigation, route }: Props) {
       </View>
 
       <View style={styles.actions}>
-        <PrimaryButton label="Hubungi Penyewa" variant="secondary" onPress={() => {}} />
-        <PrimaryButton label="Konfirmasi Pesanan" onPress={() => {}} />
+        <PrimaryButton
+          label="Hubungi Penyewa"
+          variant="secondary"
+          onPress={openChat}
+        />
+        {nextStatus ? (
+          <PrimaryButton
+            label={actionLabel}
+            onPress={handleConfirm}
+            loading={updateStatus.isPending}
+          />
+        ) : null}
       </View>
 
       <View style={styles.chatHint}>

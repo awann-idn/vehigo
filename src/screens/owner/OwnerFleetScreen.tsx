@@ -1,5 +1,5 @@
 import React, { useMemo, useState } from 'react';
-import { Pressable, StyleSheet, Text, View } from 'react-native';
+import { ActivityIndicator, Pressable, StyleSheet, Text, View } from 'react-native';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { Car, Plus, Search } from 'lucide-react-native';
 import { RootStackParamList } from '../../navigation/types';
@@ -11,7 +11,9 @@ import { EmptyState } from '../../components/EmptyState';
 import { colors } from '../../theme/colors';
 import { spacing } from '../../theme/spacing';
 import { typography } from '../../theme/typography';
-import { formatRupiah, vehicles } from '../../data/mock';
+import { formatRupiah } from '../../lib/formatters';
+import { useVehicles } from '../../hooks/useVehicles';
+import { useAuth } from '../../features/auth/useAuth';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'OwnerApp'>;
 
@@ -20,6 +22,9 @@ const tabs = ['Semua', 'Tersedia', 'Disewa', 'Maintenance'];
 export default function OwnerFleetScreen({ navigation }: Props) {
   const [query, setQuery] = useState('');
   const [tab, setTab] = useState('Semua');
+  const { user } = useAuth();
+
+  const { data: vehicles = [], isLoading, isError } = useVehicles(user?.id);
 
   const data = useMemo(
     () =>
@@ -28,7 +33,7 @@ export default function OwnerFleetScreen({ navigation }: Props) {
           (tab === 'Semua' || vehicle.status === tab) &&
           vehicle.name.toLowerCase().includes(query.toLowerCase())
       ),
-    [query, tab]
+    [query, tab, vehicles]
   );
 
   return (
@@ -49,7 +54,11 @@ export default function OwnerFleetScreen({ navigation }: Props) {
         <Text style={styles.addText}>TAMBAH KENDARAAN</Text>
       </Pressable>
 
-      {data.length === 0 ? (
+      {isLoading ? (
+        <ActivityIndicator size="large" color={colors.primary} style={{ marginTop: spacing.xl }} />
+      ) : isError ? (
+        <EmptyState icon={Car} title="Kendaraan belum tersedia" message="Data belum dapat dimuat. Coba lagi nanti." />
+      ) : data.length === 0 ? (
         <EmptyState icon={Car} title="Tidak ada kendaraan" message="Tambahkan kendaraan pertama Anda." />
       ) : (
         <View style={styles.list}>

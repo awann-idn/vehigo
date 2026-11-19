@@ -221,7 +221,10 @@ create policy messages_update on public.messages
     select 1 from public.chats c
     where c.id = chat_id and (c.renter_id = auth.uid() or c.mitra_id = auth.uid())
   ))
-  with check (true);
+  with check (exists (
+    select 1 from public.chats c
+    where c.id = chat_id and (c.renter_id = auth.uid() or c.mitra_id = auth.uid())
+  ) and sender_id = auth.uid());
 
 -- notifications
 drop policy if exists notifications_select on public.notifications;

@@ -9,12 +9,14 @@ import { SegmentedTabs } from '../../components/SegmentedTabs';
 import { colors } from '../../theme/colors';
 import { spacing } from '../../theme/spacing';
 import { typography } from '../../theme/typography';
-import { reviews } from '../../data/mock';
+import { useReviews } from '../../hooks/useReviews';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'Reviews'>;
 
 export default function ReviewsScreen({ navigation }: Props) {
   const [tab, setTab] = React.useState('Review Produk');
+  const { data: reviews = [] } = useReviews();
+  const average = reviews.length ? reviews.reduce((sum, review) => sum + review.rating, 0) / reviews.length : 0;
 
   return (
     <Screen scroll>
@@ -22,8 +24,8 @@ export default function ReviewsScreen({ navigation }: Props) {
       <SegmentedTabs options={['Review Produk', 'Review Mitra']} value={tab} onChange={setTab} />
 
       <View style={styles.summary}>
-        <Text style={styles.score}>4.8</Text>
-        <Text style={styles.scoreMeta}>dari 842 ulasan</Text>
+        <Text style={styles.score}>{average.toFixed(1)}</Text>
+        <Text style={styles.scoreMeta}>dari {reviews.length} ulasan</Text>
         <View style={styles.stars}>
           {[1, 2, 3, 4, 5].map((value) => (
             <Star key={value} size={14} color={colors.secondary} fill={colors.secondary} />
@@ -41,6 +43,7 @@ export default function ReviewsScreen({ navigation }: Props) {
           <Text style={styles.body}>{review.body}</Text>
         </View>
       ))}
+      {reviews.length === 0 && <Text style={styles.body}>Belum ada ulasan.</Text>}
     </Screen>
   );
 }

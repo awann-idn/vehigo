@@ -13,11 +13,14 @@ export type RootStackParamList = {
   OwnerReg4: undefined;
   OwnerReg5: undefined;
   OwnerVerification: undefined;
+  OwnerBusinessProfile: undefined;
   OwnerApp: undefined;
   RenterApp: undefined;
+  AdminApp: undefined;
   OwnerOrderDetail: { id: string };
   OwnerVehicleDetail: { id: string };
-  OwnerAddVehicle: undefined;
+  OwnerAvailability: { id: string };
+  OwnerAddVehicle: { id?: string } | undefined;
   OwnerChatDetail: { id: string };
   VehicleDetail: { id: string };
   SearchResults: undefined;
@@ -25,14 +28,16 @@ export type RootStackParamList = {
   Reviews: undefined;
   BookingGateway: { vehicleId: string };
   BookingIdentity: { vehicleId: string };
-  BookingCheckout: { vehicleId: string };
-  BookingPayment: { vehicleId: string };
+  BookingCheckout: { vehicleId: string; startDate?: string; endDate?: string };
+  BookingPayment: { vehicleId: string; orderId?: string; total?: number };
   RenterOrderDetail: { id: string };
   Inspection: { id: string };
   Rating: { id: string };
   ChatDetail: { id: string };
   Terms: undefined;
-  DatePicker: undefined;
+  RenterProfileEdit: undefined;
+  RenterVerification: undefined;
+  DatePicker: { vehicleId?: string };
 };
 
 export type OwnerTabParamList = {

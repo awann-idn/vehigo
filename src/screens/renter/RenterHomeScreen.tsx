@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { Pressable, StyleSheet, Text, View } from 'react-native';
+import React from 'react';
+import { ActivityIndicator, Pressable, StyleSheet, Text, View } from 'react-native';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { Bell, CalendarDays, Car, MapPin, Search, ShieldCheck, Star } from 'lucide-react-native';
 import { RootStackParamList } from '../../navigation/types';
@@ -8,13 +8,15 @@ import { Card } from '../../components/Card';
 import { colors } from '../../theme/colors';
 import { spacing } from '../../theme/spacing';
 import { typography } from '../../theme/typography';
-import { formatRupiah, mitras, vehicles } from '../../data/mock';
+import { formatRupiah } from '../../lib/formatters';
+import { useVehicles } from '../../hooks/useVehicles';
+import { useMitras } from '../../hooks/useMitras';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'RenterApp'>;
 
 export default function RenterHomeScreen({ navigation }: Props) {
-  const [start] = useState('12 Okt 2026');
-  const [end] = useState('15 Okt 2026');
+  const { data: vehicles = [], isLoading, isError } = useVehicles();
+  const { data: mitras = [] } = useMitras();
 
   return (
     <Screen scroll>
@@ -26,7 +28,7 @@ export default function RenterHomeScreen({ navigation }: Props) {
             <Text style={styles.location}>Palembang, ID</Text>
           </View>
         </View>
-        <Pressable style={styles.bell} onPress={() => navigation.navigate('RenterApp')}>
+        <Pressable style={styles.bell} onPress={() => navigation.navigate('Notifikasi' as never)}>
           <Bell size={20} color={colors.primary} />
           <View style={styles.dot} />
         </Pressable>
@@ -37,15 +39,15 @@ export default function RenterHomeScreen({ navigation }: Props) {
         <Text style={styles.searchText}>Cari mobil atau motor...</Text>
       </Pressable>
 
-      <Pressable style={styles.dateCard} onPress={() => navigation.navigate('DatePicker')}>
+        <Pressable style={styles.dateCard} onPress={() => navigation.navigate('SearchResults')}>
         <View style={styles.dateCol}>
           <Text style={styles.dateLabel}>MULAI</Text>
-          <Text style={styles.dateValue}>{start}</Text>
+          <Text style={styles.dateValue}>Pilih tanggal</Text>
         </View>
         <CalendarDays size={18} color={colors.text.muted} />
         <View style={styles.dateCol}>
           <Text style={styles.dateLabel}>SELESAI</Text>
-          <Text style={styles.dateValue}>{end}</Text>
+          <Text style={styles.dateValue}>Pilih tanggal</Text>
         </View>
       </Pressable>
 
@@ -89,33 +91,44 @@ export default function RenterHomeScreen({ navigation }: Props) {
         <Text style={styles.sectionLink}>Populer</Text>
       </View>
 
-      {vehicles.map((vehicle) => (
-        <Pressable
-          key={vehicle.id}
-          style={styles.vehicleCard}
-          onPress={() => navigation.navigate('VehicleDetail', { id: vehicle.id })}
-        >
-          <View style={[styles.vehicleThumb, { backgroundColor: vehicle.tint }]}>
-            <Car size={30} color={colors.primary} />
-          </View>
-          <View style={styles.vehicleText}>
-            <Text style={styles.vehicleName}>{vehicle.name}</Text>
-            <Text style={styles.vehicleMeta}>
-              {vehicle.transmission} • {vehicle.seats} kursi
-            </Text>
-            <Text style={styles.vehiclePrice}>{formatRupiah(vehicle.pricePerDay)}/hari</Text>
-          </View>
-          <View style={styles.ratingPill}>
-            <Star size={11} color={colors.secondary} />
-            <Text style={styles.ratingText}>{vehicle.rating}</Text>
-          </View>
-        </Pressable>
-      ))}
+      {isLoading ? (
+        <ActivityIndicator size="large" color={colors.primary} style={{ marginTop: spacing.md }} />
+      ) : isError ? (
+        <Text style={styles.errorText}>Kendaraan belum dapat dimuat. Coba lagi nanti.</Text>
+      ) : (
+        vehicles.map((vehicle) => (
+          <Pressable
+            key={vehicle.id}
+            style={styles.vehicleCard}
+            onPress={() => navigation.navigate('VehicleDetail', { id: vehicle.id })}
+          >
+            <View style={[styles.vehicleThumb, { backgroundColor: vehicle.tint }]}>
+              <Car size={30} color={colors.primary} />
+            </View>
+            <View style={styles.vehicleText}>
+              <Text style={styles.vehicleName}>{vehicle.name}</Text>
+              <Text style={styles.vehicleMeta}>
+                {vehicle.transmission} • {vehicle.seats} kursi
+              </Text>
+              <Text style={styles.vehiclePrice}>{formatRupiah(vehicle.pricePerDay)}/hari</Text>
+            </View>
+            <View style={styles.ratingPill}>
+              <Star size={11} color={colors.secondary} />
+              <Text style={styles.ratingText}>{vehicle.rating}</Text>
+            </View>
+          </Pressable>
+        ))
+      )}
     </Screen>
   );
 }
 
 const styles = StyleSheet.create({
+  errorText: {
+    color: colors.text.muted,
+    ...typography.bodySm,
+    marginTop: spacing.md,
+  },
   topBar: {
     flexDirection: 'row',
     justifyContent: 'space-between',

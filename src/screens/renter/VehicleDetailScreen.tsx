@@ -1,5 +1,5 @@
 import React from 'react';
-import { Pressable, StyleSheet, Text, View } from 'react-native';
+import { ActivityIndicator, Pressable, StyleSheet, Text, View } from 'react-native';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { Car, Fuel, Settings2, ShieldCheck, Star, Users } from 'lucide-react-native';
 import { RootStackParamList } from '../../navigation/types';
@@ -10,12 +10,24 @@ import { Card } from '../../components/Card';
 import { colors } from '../../theme/colors';
 import { spacing } from '../../theme/spacing';
 import { typography } from '../../theme/typography';
-import { formatRupiah, reviews, vehicles } from '../../data/mock';
+import { formatRupiah } from '../../lib/formatters';
+import { useVehicle } from '../../hooks/useVehicles';
+import { useReviews } from '../../hooks/useReviews';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'VehicleDetail'>;
 
 export default function VehicleDetailScreen({ navigation, route }: Props) {
-  const vehicle = vehicles.find((item) => item.id === route.params.id) ?? vehicles[0];
+  const { data: vehicle, isLoading } = useVehicle(route.params.id);
+  const { data: reviews = [] } = useReviews('vehicle', route.params.id);
+
+  if (isLoading || !vehicle) {
+    return (
+      <Screen>
+        <AppHeader title="Detail Kendaraan" onBack={() => navigation.goBack()} />
+        <ActivityIndicator size="large" color={colors.primary} style={{ marginTop: spacing.xl }} />
+      </Screen>
+    );
+  }
 
   return (
     <Screen scroll>
@@ -38,7 +50,7 @@ export default function VehicleDetailScreen({ navigation, route }: Props) {
         </View>
         <View style={styles.rating}>
           <Star size={13} color={colors.secondary} />
-          <Text style={styles.ratingText}>{vehicle.rating}</Text>
+          <Text style={styles.ratingText}>{vehicle.rating ? vehicle.rating.toFixed(1) : '-'}</Text>
         </View>
       </View>
 
@@ -56,14 +68,14 @@ export default function VehicleDetailScreen({ navigation, route }: Props) {
 
       <Pressable
         style={styles.mitraCard}
-        onPress={() => navigation.navigate('MitraProfile', { id: 'm1' })}
+        onPress={() => vehicle.mitraId && navigation.navigate('MitraProfile', { id: vehicle.mitraId })}
       >
         <View style={styles.mitraAvatar}>
           <Car size={22} color={colors.primary} />
         </View>
         <View style={styles.mitraText}>
           <Text style={styles.mitraName}>{vehicle.mitra}</Text>
-          <Text style={styles.mitraMeta}>2.4 km • 842 Reviews • 7 Th.</Text>
+          <Text style={styles.mitraMeta}>{vehicle.location || 'Lokasi belum tersedia'}</Text>
         </View>
         <Text style={styles.mitraLink}>Lihat</Text>
       </Pressable>
@@ -87,6 +99,7 @@ export default function VehicleDetailScreen({ navigation, route }: Props) {
           <Text style={styles.reviewBody}>{review.body}</Text>
         </View>
       ))}
+      {reviews.length === 0 && <Text style={styles.reviewBody}>Belum ada ulasan untuk kendaraan ini.</Text>}
 
       <View style={styles.bottomBar}>
         <View>
@@ -96,7 +109,7 @@ export default function VehicleDetailScreen({ navigation, route }: Props) {
         <PrimaryButton
           label="Pesan Sekarang"
           style={styles.cta}
-          onPress={() => navigation.navigate('BookingGateway', { vehicleId: vehicle.id })}
+          onPress={() => navigation.navigate('DatePicker', { vehicleId: vehicle.id })}
         />
       </View>
     </Screen>

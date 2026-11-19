@@ -10,11 +10,15 @@ import { typography } from '../../../theme/typography';
 import { RegistrationLayout } from './RegistrationLayout';
 import { pickAndCompressImage, uploadDocument } from '../../../lib/storage';
 import { useAuth } from '../../../features/auth/useAuth';
+import { useRegistrationStore } from '../../../features/owner/registrationStore';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'OwnerReg2'>;
 
 export default function OwnerReg2Screen({ navigation }: Props) {
-  const [businessName, setBusinessName] = useState('');
+  const businessName = useRegistrationStore((state) => state.businessName);
+  const nib = useRegistrationStore((state) => state.nib);
+  const npwp = useRegistrationStore((state) => state.npwp);
+  const updateRegistration = useRegistrationStore((state) => state.update);
   const [imageUri, setImageUri] = useState<string | null>(null);
   const [uploading, setUploading] = useState(false);
   const [uploaded, setUploaded] = useState(false);
@@ -55,10 +59,20 @@ export default function OwnerReg2Screen({ navigation }: Props) {
         label="Nama Usaha"
         placeholder="Contoh: Sriwijaya Rent"
         value={businessName}
-        onChangeText={setBusinessName}
+        onChangeText={(value) => updateRegistration({ businessName: value })}
       />
-      <TextField label="Nomor Induk Berusaha (NIB)" placeholder="Masukkan NIB jika ada" />
-      <TextField label="NPWP Usaha" placeholder="00.000.000.0-000.000" />
+      <TextField
+        label="Nomor Induk Berusaha (NIB)"
+        placeholder="Masukkan NIB jika ada"
+        value={nib}
+        onChangeText={(value) => updateRegistration({ nib: value })}
+      />
+      <TextField
+        label="NPWP Usaha"
+        placeholder="00.000.000.0-000.000"
+        value={npwp}
+        onChangeText={(value) => updateRegistration({ npwp: value })}
+      />
 
       <Pressable
         style={[styles.upload, uploaded && styles.uploadSuccess]}

@@ -1,5 +1,5 @@
 import React from 'react';
-import { StyleSheet, Text, View } from 'react-native';
+import { ActivityIndicator, Alert, StyleSheet, Text, View } from 'react-native';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { Calendar, Car, CreditCard, MessageCircle, User } from 'lucide-react-native';
 import { RootStackParamList } from '../../navigation/types';
@@ -11,12 +11,25 @@ import { StatusBadge } from '../../components/StatusBadge';
 import { colors } from '../../theme/colors';
 import { spacing } from '../../theme/spacing';
 import { typography } from '../../theme/typography';
-import { formatRupiah, renterOrders } from '../../data/mock';
+import { formatRupiah } from '../../lib/formatters';
+import { useOrder } from '../../hooks/useOrders';
+import { getOrCreateChat } from '../../api/chat';
+import { useAuth } from '../../features/auth/useAuth';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'RenterOrderDetail'>;
 
 export default function RenterOrderDetailScreen({ navigation, route }: Props) {
-  const order = renterOrders.find((item) => item.id === route.params.id) ?? renterOrders[0];
+  const { data: order, isLoading } = useOrder(route.params.id);
+  const { user } = useAuth();
+
+  if (isLoading || !order) {
+    return (
+      <Screen>
+        <AppHeader title="Rincian Pesanan" onBack={() => navigation.goBack()} />
+        <ActivityIndicator size="large" color={colors.primary} style={{ marginTop: spacing.xl }} />
+      </Screen>
+    );
+  }
 
   return (
     <Screen scroll>
@@ -31,7 +44,7 @@ export default function RenterOrderDetailScreen({ navigation, route }: Props) {
         <Row icon={Car} label="Kendaraan" value={`${order.vehicle} • ${order.plate}`} />
         <Row icon={Calendar} label="Periode" value={`${order.start} – ${order.end} (${order.days} hari)`} />
         <Row icon={CreditCard} label="Pembayaran" value={order.payment} />
-        <Row icon={User} label="Mitra" value="Sriwijaya Rent Car" />
+        <Row icon={User} label="Mitra" value={order.mitraName || 'Nama mitra belum tersedia'} />
       </Card>
 
       <View style={styles.totalCard}>
@@ -43,7 +56,15 @@ export default function RenterOrderDetailScreen({ navigation, route }: Props) {
         <PrimaryButton
           label="Hubungi Mitra"
           variant="secondary"
-          onPress={() => navigation.navigate('ChatDetail', { id: 'c1' })}
+          onPress={async () => {
+            if (!user || !order?.mitraId) return;
+            try {
+              const chat = await getOrCreateChat(order.id, user.id, order.mitraId);
+              navigation.navigate('ChatDetail', { id: chat.id });
+            } catch (error) {
+              Alert.alert('Chat tidak tersedia', error instanceof Error ? error.message : 'Coba lagi.');
+            }
+          }}
         />
         {order.status === 'Berlangsung' ? (
           <PrimaryButton
