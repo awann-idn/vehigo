@@ -8,6 +8,8 @@ import OwnerFleetScreen from '../screens/owner/OwnerFleetScreen';
 import OwnerAlertsScreen from '../screens/owner/OwnerAlertsScreen';
 import OwnerProfileScreen from '../screens/owner/OwnerProfileScreen';
 import { colors } from '../theme/colors';
+import { useAuth } from '../features/auth/useAuth';
+import { useUnreadNotificationsCount } from '../hooks/useNotifications';
 
 const Tab = createBottomTabNavigator<OwnerTabParamList>();
 
@@ -20,6 +22,9 @@ const icons = {
 };
 
 export default function OwnerTabs() {
+  const { user } = useAuth();
+  const unreadCount = useUnreadNotificationsCount(user?.id);
+
   return (
     <Tab.Navigator
       screenOptions={({ route }) => ({
@@ -43,7 +48,14 @@ export default function OwnerTabs() {
       <Tab.Screen name="Dashboard" component={OwnerDashboardScreen as any} />
       <Tab.Screen name="Pesanan" component={OwnerOrdersScreen as any} />
       <Tab.Screen name="Armada" component={OwnerFleetScreen as any} />
-      <Tab.Screen name="Alerts" component={OwnerAlertsScreen as any} />
+      <Tab.Screen
+        name="Alerts"
+        component={OwnerAlertsScreen as any}
+        options={{
+          tabBarBadge: unreadCount > 0 ? unreadCount : undefined,
+          tabBarBadgeStyle: { backgroundColor: colors.danger, fontSize: 10 },
+        }}
+      />
       <Tab.Screen name="Profil" component={OwnerProfileScreen as any} />
     </Tab.Navigator>
   );

@@ -1,12 +1,25 @@
-import React from 'react';
-import { StyleSheet, Text, View } from 'react-native';
-import { AlertTriangle, BellRing, CheckCircle2 } from 'lucide-react-native';
+import React, { useCallback } from 'react';
+import { ActivityIndicator, Pressable, StyleSheet, Text, View } from 'react-native';
+import { AlertTriangle, BellRing, CheckCheck, CheckCircle2 } from 'lucide-react-native';
+import { NativeStackScreenProps } from '@react-navigation/native-stack';
+import { useFocusEffect } from '@react-navigation/native';
+import { useQueryClient } from '@tanstack/react-query';
+import { RootStackParamList } from '../../navigation/types';
 import { Screen } from '../../components/Screen';
+import { EmptyState } from '../../components/EmptyState';
 import { colors } from '../../theme/colors';
 import { spacing } from '../../theme/spacing';
 import { typography } from '../../theme/typography';
 import { useAuth } from '../../features/auth/useAuth';
-import { useNotifications } from '../../hooks/useNotifications';
+import { markAllNotificationsRead } from '../../api/notifications';
+import {
+  useMarkAllNotificationsRead,
+  useMarkLinkRead,
+  useMarkNotificationRead,
+  useNotifications,
+} from '../../hooks/useNotifications';
+
+type Props = NativeStackScreenProps<RootStackParamList, 'OwnerApp'>;
 
 const toneIcon = {
   success: CheckCircle2,
@@ -14,43 +27,119 @@ const toneIcon = {
   warning: AlertTriangle,
 };
 
-export default function OwnerAlertsScreen() {
+export default function OwnerAlertsScreen({ navigation }: Props) {
   const { user } = useAuth();
-  const { data: ownerNotifications = [] } = useNotifications(user?.id);
+  const { data: ownerNotifications = [], isLoading } = useNotifications(user?.id);
+  const markRead = useMarkNotificationRead();
+  const markAllRead = useMarkAllNotificationsRead();
+  const markLink = useMarkLinkRead();
+
+  const unreadCount = ownerNotifications.filter((n) => !n.read).length;
+
+  const queryClient = useQueryClient();
+
+  // Saat tab notifikasi dibuka, tandai semua terbaca sekali.
+  useFocusEffect(
+    useCallback(() => {
+      if (!user?.id) return;
+      let active = true;
+      markAllNotificationsRead(user.id)
+        .then(() => {
+          if (active) {
+            queryClient.invalidateQueries({ queryKey: ['notifications', user.id] });
+          }
+        })
+        .catch(() => {});
+      return () => {
+        active = false;
+      };
+    }, [user, queryClient])
+  );
+
+  const openNotification = (item: (typeof ownerNotifications)[number]) => {
+    if (!item.read) markRead.mutate(item.id);
+    if (item.linkType && item.linkId) {
+      markLink.mutate({ linkType: item.linkType, linkId: item.linkId });
+      if (item.linkType === 'chat') {
+        navigation.navigate('OwnerChatDetail', { id: item.linkId });
+      } else {
+        navigation.navigate('OwnerOrderDetail', { id: item.linkId });
+      }
+      return;
+    }
+    if (item.category === 'chat') {
+      (navigation as any).navigate('Pesanan');
+    } else {
+      (navigation as any).navigate('Pesanan');
+    }
+  };
 
   return (
     <Screen scroll>
       <View style={styles.header}>
-        <Text style={styles.title}>Notifikasi</Text>
-        <Text style={styles.subtitle}>Aktivitas terbaru seputar usaha Anda</Text>
+        <View style={styles.headerRow}>
+          <View style={{ flex: 1 }}>
+            <Text style={styles.title}>Notifikasi</Text>
+            <Text style={styles.subtitle}>Aktivitas terbaru seputar usaha Anda</Text>
+          </View>
+          {unreadCount > 0 && user?.id ? (
+            <Pressable
+              style={styles.markAllButton}
+              onPress={() => markAllRead.mutate(user.id)}
+              disabled={markAllRead.isPending}
+            >
+              <CheckCheck size={16} color={colors.primary} />
+              <Text style={styles.markAllText}>Tandai dibaca</Text>
+            </Pressable>
+          ) : null}
+        </View>
       </View>
 
-      <View style={styles.list}>
-        {ownerNotifications.map((item) => {
-          const Icon = toneIcon[item.tone];
-          return (
-            <View key={item.id} style={styles.card}>
-              <View style={styles.iconBadge}>
-                <Icon
-                  size={18}
-                  color={
-                    item.tone === 'success'
-                      ? colors.success
-                      : item.tone === 'warning'
-                        ? colors.warning
-                        : colors.primary
-                  }
-                />
-              </View>
-              <View style={styles.cardText}>
-                <Text style={styles.time}>{item.time}</Text>
-                <Text style={styles.cardTitle}>{item.title}</Text>
-                <Text style={styles.cardBody}>{item.body}</Text>
-              </View>
-            </View>
-          );
-        })}
-      </View>
+      {isLoading ? (
+        <ActivityIndicator size="large" color={colors.primary} style={{ marginTop: spacing.xl }} />
+      ) : ownerNotifications.length === 0 ? (
+        <EmptyState
+          icon={BellRing}
+          title="Belum ada notifikasi"
+          message="Aktivitas pesanan, pencairan saldo, dan peringatan armada akan tampil di sini."
+        />
+      ) : (
+        <View style={styles.list}>
+          {ownerNotifications.map((item) => {
+            const Icon = toneIcon[item.tone];
+            return (
+              <Pressable
+                key={item.id}
+                style={[styles.card, item.read && styles.cardRead]}
+                onPress={() => openNotification(item)}
+              >
+                <View style={[styles.iconBadge, item.read && styles.iconBadgeRead]}>
+                  <Icon
+                    size={18}
+                    color={
+                      item.read
+                        ? colors.text.muted
+                        : item.tone === 'success'
+                          ? colors.success
+                          : item.tone === 'warning'
+                            ? colors.warning
+                            : colors.primary
+                    }
+                  />
+                </View>
+                <View style={styles.cardText}>
+                  <View style={styles.cardHeaderRow}>
+                    <Text style={styles.time}>{item.time}</Text>
+                    {!item.read && <View style={styles.unreadDot} />}
+                  </View>
+                  <Text style={[styles.cardTitle, item.read && styles.cardTitleRead]}>{item.title}</Text>
+                  <Text style={[styles.cardBody, item.read && styles.cardBodyRead]}>{item.body}</Text>
+                </View>
+              </Pressable>
+            );
+          })}
+        </View>
+      )}
     </Screen>
   );
 }
@@ -61,12 +150,31 @@ const styles = StyleSheet.create({
     paddingBottom: spacing.base,
     gap: 2,
   },
+  headerRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+  },
   title: {
     ...typography.h2,
   },
   subtitle: {
     ...typography.bodySm,
     color: colors.text.muted,
+  },
+  markAllButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    paddingVertical: 6,
+    paddingHorizontal: 10,
+    backgroundColor: colors.card,
+    borderRadius: 8,
+  },
+  markAllText: {
+    ...typography.caption,
+    color: colors.primary,
+    fontWeight: '600',
   },
   list: {
     gap: spacing.md,
@@ -81,6 +189,10 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: colors.stroke,
   },
+  cardRead: {
+    opacity: 0.7,
+    backgroundColor: colors.card,
+  },
   iconBadge: {
     width: 38,
     height: 38,
@@ -89,23 +201,40 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
+  iconBadgeRead: {
+    backgroundColor: colors.surface,
+  },
   cardText: {
     flex: 1,
-    gap: 2,
+    gap: 4,
+  },
+  cardHeaderRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+  },
+  unreadDot: {
+    width: 8,
+    height: 8,
+    borderRadius: 4,
+    backgroundColor: colors.danger,
   },
   time: {
     ...typography.caption,
-    fontWeight: '700',
     color: colors.text.muted,
-    letterSpacing: 0.5,
   },
   cardTitle: {
-    ...typography.bodySm,
-    fontWeight: '700',
+    ...typography.h3,
+    fontSize: 16,
+  },
+  cardTitleRead: {
+    color: colors.text.muted,
   },
   cardBody: {
-    ...typography.caption,
-    color: colors.text.secondary,
-    lineHeight: 17,
+    ...typography.bodySm,
+    color: colors.text.muted,
+  },
+  cardBodyRead: {
+    color: colors.text.muted,
   },
 });

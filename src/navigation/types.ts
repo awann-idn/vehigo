@@ -26,8 +26,8 @@ export type RootStackParamList = {
   SearchResults: undefined;
   MitraProfile: { id: string };
   Reviews: undefined;
-  BookingGateway: { vehicleId: string };
-  BookingIdentity: { vehicleId: string };
+  BookingGateway: { vehicleId: string; startDate?: string; endDate?: string };
+  BookingIdentity: { vehicleId: string; startDate?: string; endDate?: string };
   BookingCheckout: { vehicleId: string; startDate?: string; endDate?: string };
   BookingPayment: { vehicleId: string; orderId?: string; total?: number };
   RenterOrderDetail: { id: string };
@@ -38,6 +38,8 @@ export type RootStackParamList = {
   RenterProfileEdit: undefined;
   RenterVerification: undefined;
   DatePicker: { vehicleId?: string };
+  AppSettings: undefined;
+  HelpCenter: undefined;
 };
 
 export type OwnerTabParamList = {

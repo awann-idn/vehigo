@@ -24,27 +24,55 @@ import { useAuth } from '../../features/auth/useAuth';
 import { useOrders } from '../../hooks/useOrders';
 import { useVehicles } from '../../hooks/useVehicles';
 import { useMitraRating, useMyMitraProfile } from '../../hooks/useMitras';
+import { useUnreadNotificationsCount } from '../../hooks/useNotifications';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'OwnerApp'>;
 
 export default function OwnerDashboardScreen({ navigation }: Props) {
   const { user, profile } = useAuth();
+  const unreadNotifs = useUnreadNotificationsCount(user?.id);
   const { data: orders = [] } = useOrders('mitra', user?.id);
   const { data: vehicles = [] } = useVehicles(user?.id);
   const { data: mitraProfile } = useMyMitraProfile(user?.id);
   const { data: rating } = useMitraRating(user?.id);
-  const awaitingConfirmation = orders.filter((order) => order.status === 'Belum Bayar').length;
 
-  const revenue = orders
-    .filter((order) => order.status === 'Selesai')
-    .reduce((sum, order) => sum + order.total, 0);
+  const awaitingConfirmation = useMemo(
+    () => orders.filter((order) => order.status === 'Belum Bayar').length,
+    [orders]
+  );
+  const activeOrders = useMemo(
+    () => orders.filter((order) => order.status === 'Berlangsung' || order.status === 'Denda').length,
+    [orders]
+  );
+  const completedOrders = useMemo(
+    () => orders.filter((order) => order.status === 'Selesai').length,
+    [orders]
+  );
+
+  const revenue = useMemo(
+    () =>
+      orders
+        .filter((order) => order.status === 'Selesai')
+        .reduce((sum, order) => sum + (order.total || 0), 0),
+    [orders]
+  );
   const revenueLabel =
     revenue >= 1_000_000 ? `Rp ${(revenue / 1_000_000).toFixed(1)}M` : formatRupiah(revenue);
 
+  const rentedVehicles = useMemo(
+    () => vehicles.filter((v) => v.status === 'Disewa').length,
+    [vehicles]
+  );
+  const standbyVehicles = useMemo(
+    () => vehicles.filter((v) => v.status === 'Tersedia').length,
+    [vehicles]
+  );
+  const totalVehicles = vehicles.length;
+
   const kpis = [
-    { icon: Wallet, label: 'PENDAPATAN', value: revenueLabel, hint: 'Bulan ini' },
-    { icon: ClipboardList, label: 'PESANAN', value: `${orders.length}`, hint: 'Bulan ini' },
-    { icon: Car, label: 'ARMADA', value: `${vehicles.length} unit`, hint: 'Aktif' },
+    { icon: Wallet, label: 'PENDAPATAN', value: revenueLabel, hint: `${completedOrders} pesanan selesai` },
+    { icon: ClipboardList, label: 'PESANAN', value: `${orders.length}`, hint: `${activeOrders} aktif • ${awaitingConfirmation} baru` },
+    { icon: Car, label: 'ARMADA', value: `${totalVehicles} unit`, hint: `${rentedVehicles} disewa • ${standbyVehicles} standby` },
     {
       icon: Star,
       label: 'RATING',
@@ -56,7 +84,9 @@ export default function OwnerDashboardScreen({ navigation }: Props) {
   const bestSeller = useMemo(() => {
     const counts: Record<string, number> = {};
     orders.forEach((order) => {
-      counts[order.vehicle] = (counts[order.vehicle] ?? 0) + 1;
+      if (order.vehicle) {
+        counts[order.vehicle] = (counts[order.vehicle] ?? 0) + 1;
+      }
     });
     const sorted = Object.entries(counts).sort((a, b) => b[1] - a[1]);
     return sorted[0] ? { name: sorted[0][0], count: sorted[0][1] } : null;
@@ -75,12 +105,21 @@ export default function OwnerDashboardScreen({ navigation }: Props) {
             </Text>
           </View>
         </View>
-        <Pressable
-          style={styles.avatar}
-          onPress={() => (navigation as any).navigate('OwnerApp', { screen: 'Profil' })}
-        >
-          <Text style={styles.avatarText}>{(profile?.full_name || user?.email || 'M').slice(0, 2).toUpperCase()}</Text>
-        </Pressable>
+        <View style={styles.topRight}>
+          <Pressable
+            style={styles.bellBtn}
+            onPress={() => (navigation as any).navigate('OwnerApp', { screen: 'Alerts' })}
+          >
+            <Bell size={20} color={colors.primary} />
+            {unreadNotifs > 0 ? <View style={styles.notifDot} /> : null}
+          </Pressable>
+          <Pressable
+            style={styles.avatar}
+            onPress={() => (navigation as any).navigate('OwnerApp', { screen: 'Profil' })}
+          >
+            <Text style={styles.avatarText}>{(profile?.full_name || user?.email || 'M').slice(0, 2).toUpperCase()}</Text>
+          </Pressable>
+        </View>
       </View>
 
       <Card style={styles.banner}>
@@ -129,15 +168,15 @@ export default function OwnerDashboardScreen({ navigation }: Props) {
 
       <View style={styles.insightRow}>
         <Card style={styles.insight}>
-          <Text style={styles.insightLabel}>INSIGHT</Text>
+          <Text style={styles.insightLabel}>STATUS ARMADA</Text>
           <Text style={styles.insightText}>
-            {bestSeller ? `${bestSeller.name} paling sering dipesan` : 'Belum ada data pesanan'}
+            {standbyVehicles} standby • {rentedVehicles} tersewa
           </Text>
         </Card>
         <Card style={styles.insight}>
           <Text style={styles.insightLabel}>PENDAPATAN</Text>
           <Text style={styles.insightText}>
-            {orders.filter((order) => order.status === 'Selesai').length} pesanan selesai
+            {completedOrders} pesanan selesai
           </Text>
         </Card>
       </View>
@@ -149,27 +188,44 @@ export default function OwnerDashboardScreen({ navigation }: Props) {
         </Pressable>
       </View>
 
-      {orders.slice(0, 3).map((order) => (
-        <Pressable
-          key={order.id}
-          style={styles.orderRow}
-          onPress={() => navigation.navigate('OwnerOrderDetail', { id: order.id })}
-        >
-          <View style={styles.orderIcon}>
-            <CalendarCheck size={18} color={colors.primary} />
-          </View>
-          <View style={styles.orderText}>
-            <Text style={styles.orderName}>{order.renter}</Text>
-            <Text style={styles.orderSub}>
-              {order.vehicle.split(' ')[0]} • {order.start}
-            </Text>
-          </View>
-          <View style={styles.orderRight}>
-            <Text style={styles.orderTotal}>{formatRupiah(order.total)}</Text>
-            <StatusBadge label={order.status} tone={order.status === 'Selesai' ? 'success' : 'warning'} />
-          </View>
-        </Pressable>
-      ))}
+      {orders.length === 0 ? (
+        <Card style={styles.bestSeller}>
+          <Text style={styles.bestSub}>Belum ada pesanan terbaru.</Text>
+        </Card>
+      ) : (
+        orders.slice(0, 3).map((order) => (
+          <Pressable
+            key={order.id}
+            style={styles.orderRow}
+            onPress={() => navigation.navigate('OwnerOrderDetail', { id: order.id })}
+          >
+            <View style={styles.orderIcon}>
+              <CalendarCheck size={18} color={colors.primary} />
+            </View>
+            <View style={styles.orderText}>
+              <Text style={styles.orderName}>{order.renter || 'Penyewa'}</Text>
+              <Text style={styles.orderSub}>
+                {(order.vehicle || 'Kendaraan').split(' ')[0]} • {order.start}
+              </Text>
+            </View>
+            <View style={styles.orderRight}>
+              <Text style={styles.orderTotal}>{formatRupiah(order.total)}</Text>
+              <StatusBadge
+                label={order.status}
+                tone={
+                  order.status === 'Selesai'
+                    ? 'success'
+                    : order.status === 'Berlangsung'
+                      ? 'neutral'
+                      : order.status === 'Dibatalkan'
+                        ? 'danger'
+                        : 'warning'
+                }
+              />
+            </View>
+          </Pressable>
+        ))
+      )}
 
       <Pressable
         style={styles.alertsLink}
@@ -209,6 +265,28 @@ const styles = StyleSheet.create({
   location: {
     ...typography.caption,
     color: colors.text.muted,
+  },
+  topRight: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.sm,
+  },
+  bellBtn: {
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    backgroundColor: colors.card,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  notifDot: {
+    position: 'absolute',
+    top: 10,
+    right: 10,
+    width: 8,
+    height: 8,
+    borderRadius: 4,
+    backgroundColor: colors.danger,
   },
   avatar: {
     width: 44,

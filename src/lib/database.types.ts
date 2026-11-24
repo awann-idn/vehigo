@@ -11,6 +11,7 @@ export type AccountStatus = 'active' | 'pending' | 'suspended';
 export type VehicleStatus = 'tersedia' | 'disewa' | 'maintenance';
 export type OrderStatus =
   | 'belum_bayar'
+  | 'menunggu_konfirmasi'
   | 'berlangsung'
   | 'selesai'
   | 'denda'
@@ -28,10 +29,15 @@ export interface Database {
           id: string;
           full_name: string | null;
           avatar_url: string | null;
+          phone: string | null;
         };
       };
     };
     Functions: {
+      mark_link_read: {
+        Args: { p_link_type: string; p_link_id: string };
+        Returns: Json;
+      };
       get_vehicle_unavailable_dates: {
         Args: { p_vehicle_id: string; p_from: string; p_to: string };
         Returns: { date: string }[];
@@ -385,6 +391,9 @@ export interface Database {
           type: string;
           read_at: string | null;
           created_at: string;
+          link_type: string | null;
+          link_id: string | null;
+          category: string;
         };
         Insert: {
           id?: string;
@@ -394,6 +403,9 @@ export interface Database {
           type?: string;
           read_at?: string | null;
           created_at?: string;
+          link_type?: string | null;
+          link_id?: string | null;
+          category?: string;
         };
         Update: {
           id?: string;
@@ -403,6 +415,9 @@ export interface Database {
           type?: string;
           read_at?: string | null;
           created_at?: string;
+          link_type?: string | null;
+          link_id?: string | null;
+          category?: string;
         };
       };
       documents: {

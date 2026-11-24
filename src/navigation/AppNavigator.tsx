@@ -23,6 +23,7 @@ import OwnerOrderDetailScreen from '../screens/owner/OwnerOrderDetailScreen';
 import OwnerVehicleDetailScreen from '../screens/owner/OwnerVehicleDetailScreen';
 import OwnerAvailabilityScreen from '../screens/owner/OwnerAvailabilityScreen';
 import OwnerAddVehicleScreen from '../screens/owner/OwnerAddVehicleScreen';
+import OwnerChatDetailScreen from '../screens/owner/OwnerChatDetailScreen';
 
 import SearchResultsScreen from '../screens/renter/SearchResultsScreen';
 import DatePickerScreen from '../screens/renter/DatePickerScreen';
@@ -40,6 +41,8 @@ import RatingScreen from '../screens/renter/RatingScreen';
 import ChatDetailScreen from '../screens/renter/ChatDetailScreen';
 import RenterProfileEditScreen from '../screens/renter/RenterProfileEditScreen';
 import RenterVerificationScreen from '../screens/renter/RenterVerificationScreen';
+import AppSettingsScreen from '../screens/renter/AppSettingsScreen';
+import HelpCenterScreen from '../screens/renter/HelpCenterScreen';
 
 import OwnerTabs from './OwnerTabs';
 import RenterTabs from './RenterTabs';
@@ -80,6 +83,7 @@ export default function AppNavigator() {
         <Stack.Screen name="OwnerVehicleDetail" component={OwnerVehicleDetailScreen} />
         <Stack.Screen name="OwnerAvailability" component={OwnerAvailabilityScreen} />
         <Stack.Screen name="OwnerAddVehicle" component={OwnerAddVehicleScreen} />
+        <Stack.Screen name="OwnerChatDetail" component={OwnerChatDetailScreen} />
 
         <Stack.Screen name="VehicleDetail" component={VehicleDetailScreen} />
         <Stack.Screen name="SearchResults" component={SearchResultsScreen} />
@@ -97,6 +101,8 @@ export default function AppNavigator() {
         <Stack.Screen name="ChatDetail" component={ChatDetailScreen} />
         <Stack.Screen name="RenterProfileEdit" component={RenterProfileEditScreen} />
         <Stack.Screen name="RenterVerification" component={RenterVerificationScreen} />
+        <Stack.Screen name="AppSettings" component={AppSettingsScreen} />
+        <Stack.Screen name="HelpCenter" component={HelpCenterScreen} />
       </Stack.Navigator>
     </NavigationContainer>
   );

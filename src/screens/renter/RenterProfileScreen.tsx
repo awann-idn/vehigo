@@ -61,8 +61,8 @@ export default function RenterProfileScreen({ navigation }: Props) {
       <View style={styles.section}>
         <Text style={styles.sectionTitle}>Preferensi</Text>
         <ListItem icon={Bell} title="Notifikasi" onPress={() => navigation.navigate('Notifikasi' as never)} />
-        <ListItem icon={Settings} title="Pengaturan Aplikasi" onPress={() => Alert.alert('Segera tersedia', 'Pengaturan aplikasi belum termasuk trial inti.')} />
-        <ListItem icon={HelpCircle} title="Pusat Bantuan" onPress={() => Alert.alert('Pusat Bantuan', 'Hubungi admin Vehigo melalui chat pada pesanan aktif.')} />
+        <ListItem icon={Settings} title="Pengaturan Aplikasi" onPress={() => navigation.navigate('AppSettings')} />
+        <ListItem icon={HelpCircle} title="Pusat Bantuan" onPress={() => navigation.navigate('HelpCenter')} />
         <ListItem icon={ShieldCheck} title="Syarat & Ketentuan" onPress={() => navigation.navigate('Terms')} />
       </View>
 

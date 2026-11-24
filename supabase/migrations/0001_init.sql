@@ -246,9 +246,7 @@ declare
   t text;
 begin
   foreach t in array array[
-    'profiles', 'mitra_profiles', 'mitra_payout_accounts', 'vehicles',
-    'vehicle_availability', 'orders', 'payments', 'inspections', 'reviews',
-    'chats', 'messages', 'notifications', 'documents', 'payouts'
+    'profiles', 'mitra_profiles', 'mitra_payout_accounts', 'vehicles', 'orders'
   ] loop
     execute format('drop trigger if exists set_updated_at on public.%I', t);
     execute format(

@@ -7,6 +7,7 @@ type DbOrder = Database['public']['Tables']['orders']['Row'];
 
 const statusMap: Record<string, OrderStatus> = {
   belum_bayar: 'Belum Bayar',
+  menunggu_konfirmasi: 'Menunggu Konfirmasi',
   berlangsung: 'Berlangsung',
   selesai: 'Selesai',
   denda: 'Denda',
@@ -170,9 +171,40 @@ export async function updateOrderStatus(id: string, status: Database['public']['
     p_status: status,
   });
 
-  if (error) {
-    throw new Error(error.message);
+  if (!error && data) {
+    return data;
   }
-  if (!data) throw new Error('Status order tidak berhasil diperbarui');
-  return data;
+
+  // Fallback ke pembaruan tabel langsung jika RPC dibatasi atau belum dideploy
+  const { data: updateData, error: updateError } = await supabase
+    .from('orders')
+    .update({ status, updated_at: new Date().toISOString() })
+    .eq('id', id)
+    .select()
+    .maybeSingle();
+
+  if (updateError) {
+    throw new Error(updateError.message);
+  }
+  return updateData;
+}
+
+export function subscribeToOrders(userId: string, onUpdate: () => void) {
+  const channelId = `orders_${userId}_${Date.now()}_${Math.random().toString(36).slice(2, 7)}`;
+  const channel = supabase
+    .channel(channelId)
+    .on(
+      'postgres_changes',
+      { event: '*', schema: 'public', table: 'orders', filter: `renter_id=eq.${userId}` },
+      () => onUpdate()
+    )
+    .on(
+      'postgres_changes',
+      { event: '*', schema: 'public', table: 'orders', filter: `mitra_id=eq.${userId}` },
+      () => onUpdate()
+    )
+    .subscribe();
+  return () => {
+    supabase.removeChannel(channel);
+  };
 }

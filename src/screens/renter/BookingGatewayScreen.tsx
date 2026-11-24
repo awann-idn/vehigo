@@ -1,5 +1,5 @@
 import React from 'react';
-import { StyleSheet, Text, View } from 'react-native';
+import { Alert, Linking, StyleSheet, Text, View } from 'react-native';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { MessageCircle, Smartphone } from 'lucide-react-native';
 import { RootStackParamList } from '../../navigation/types';
@@ -13,7 +13,25 @@ import { typography } from '../../theme/typography';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'BookingGateway'>;
 
+const CS_WHATSAPP_NUMBER = '6281200000000';
+
 export default function BookingGatewayScreen({ navigation, route }: Props) {
+  const handleChatAdmin = async () => {
+    const message = encodeURIComponent(
+      `Halo CS Vehigo, saya ingin konsultasi dan pemesanan kendaraan (ID: ${route.params.vehicleId}).`
+    );
+    const waUrl = `https://wa.me/${CS_WHATSAPP_NUMBER}?text=${message}`;
+
+    try {
+      await Linking.openURL(waUrl);
+    } catch {
+      Alert.alert(
+        'WhatsApp Tidak Tersedia',
+        `Silakan hubungi WhatsApp kami langsung di +${CS_WHATSAPP_NUMBER}`
+      );
+    }
+  };
+
   return (
     <Screen scroll>
       <AppHeader title="Gateway Pemesanan" onBack={() => navigation.goBack()} />
@@ -33,7 +51,13 @@ export default function BookingGatewayScreen({ navigation, route }: Props) {
         </Text>
         <PrimaryButton
           label="Lanjutkan via Aplikasi"
-          onPress={() => navigation.navigate('BookingIdentity', { vehicleId: route.params.vehicleId })}
+          onPress={() =>
+            navigation.navigate('BookingIdentity', {
+              vehicleId: route.params.vehicleId,
+              startDate: route.params.startDate,
+              endDate: route.params.endDate,
+            })
+          }
         />
       </Card>
 
@@ -46,7 +70,7 @@ export default function BookingGatewayScreen({ navigation, route }: Props) {
           Butuh bantuan? Hubungi admin kami untuk konsultasi unit, nego harga, atau
           pertanyaan khusus lainnya.
         </Text>
-        <PrimaryButton label="Chat Admin" variant="secondary" onPress={() => {}} />
+        <PrimaryButton label="Chat Admin" variant="secondary" onPress={handleChatAdmin} />
       </Card>
 
       <Text style={styles.terms} onPress={() => navigation.navigate('Terms')}>

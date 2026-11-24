@@ -17,3 +17,23 @@ export async function createPendingPayment(orderId: string, amount: number, meth
   if (!data) throw new Error('Pembayaran belum berhasil dicatat');
   return data;
 }
+
+export async function recordSuccessfulPayment(orderId: string, amount: number, method?: string) {
+  const { data, error } = await supabase
+    .from('payments')
+    .insert({
+      order_id: orderId,
+      amount,
+      method: method ?? 'Simulasi Otomatis',
+      provider: 'simulation',
+      status: 'paid',
+      paid_at: new Date().toISOString(),
+    })
+    .select()
+    .maybeSingle();
+
+  if (error) {
+    console.warn('Catatan: Gagal mencatat pembayaran ke tabel payments:', error.message);
+  }
+  return data;
+}

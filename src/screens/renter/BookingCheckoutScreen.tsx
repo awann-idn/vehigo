@@ -49,12 +49,13 @@ export default function BookingCheckoutScreen({ navigation, route }: Props) {
     return <Screen><Text style={styles.meta}>Memuat kendaraan...</Text></Screen>;
   }
 
-  if (vehicleError || !vehicle) {
-    return <Screen><Text style={styles.meta}>Kendaraan tidak dapat dimuat.</Text></Screen>;
+  if (vehicleError || !vehicle || vehicle.status !== 'Tersedia') {
+    return <Screen><Text style={styles.meta}>Kendaraan sedang tidak tersedia untuk dipesan.</Text></Screen>;
   }
 
   const subtotal = vehicle.pricePerDay * period.days;
-  const total = subtotal;
+  const driverFee = method === 'Dengan Driver' ? 150000 * period.days : 0;
+  const total = subtotal + driverFee;
 
   const submit = () => {
     if (!user) {
@@ -75,6 +76,7 @@ export default function BookingCheckoutScreen({ navigation, route }: Props) {
         deposit: 0,
         total,
         payment_method: method,
+        notes: method === 'Dengan Driver' ? 'Termasuk Layanan Driver' : 'Lepas Kunci',
       },
       {
         onSuccess: (order) =>
@@ -122,6 +124,9 @@ export default function BookingCheckoutScreen({ navigation, route }: Props) {
 
       <Card style={styles.summary}>
         <Row label={`Biaya sewa (${period.days} hari)`} value={formatRupiah(subtotal)} />
+        {driverFee > 0 ? (
+          <Row label={`Layanan Driver (${period.days} hari)`} value={formatRupiah(driverFee)} />
+        ) : null}
         <View style={styles.divider} />
         <Row label="Total" value={formatRupiah(total)} bold />
       </Card>

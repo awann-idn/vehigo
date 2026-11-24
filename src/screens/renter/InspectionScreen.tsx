@@ -14,6 +14,7 @@ import { typography } from '../../theme/typography';
 import { useAuth } from '../../features/auth/useAuth';
 import { pickAndCompressImage, uploadDocument } from '../../lib/storage';
 import { saveInspection } from '../../api/inspections';
+import { updateOrderStatus } from '../../api/orders';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'Inspection'>;
 
@@ -59,6 +60,11 @@ export default function InspectionScreen({ navigation, route }: Props) {
           })),
           damageFee: 0,
           approved,
+        });
+
+        // Tandai order menjadi selesai setelah inspeksi akhir diajukan
+        await updateOrderStatus(route.params.id, 'selesai').catch((e) => {
+          console.warn('Update order status notice:', e);
         });
       } else {
         throw new Error('Anda harus login untuk menyimpan inspeksi');

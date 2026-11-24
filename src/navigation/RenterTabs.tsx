@@ -8,6 +8,8 @@ import ChatListScreen from '../screens/renter/ChatListScreen';
 import NotificationsScreen from '../screens/renter/NotificationsScreen';
 import RenterProfileScreen from '../screens/renter/RenterProfileScreen';
 import { colors } from '../theme/colors';
+import { useAuth } from '../features/auth/useAuth';
+import { useUnreadNotificationsCount } from '../hooks/useNotifications';
 
 const Tab = createBottomTabNavigator<RenterTabParamList>();
 
@@ -20,6 +22,9 @@ const icons = {
 };
 
 export default function RenterTabs() {
+  const { user } = useAuth();
+  const unreadCount = useUnreadNotificationsCount(user?.id);
+
   return (
     <Tab.Navigator
       screenOptions={({ route }) => ({
@@ -43,7 +48,14 @@ export default function RenterTabs() {
       <Tab.Screen name="Home" component={RenterHomeScreen as any} />
       <Tab.Screen name="Pesanan" component={RenterOrdersScreen as any} />
       <Tab.Screen name="Chat" component={ChatListScreen as any} />
-      <Tab.Screen name="Notifikasi" component={NotificationsScreen as any} />
+      <Tab.Screen
+        name="Notifikasi"
+        component={NotificationsScreen as any}
+        options={{
+          tabBarBadge: unreadCount > 0 ? unreadCount : undefined,
+          tabBarBadgeStyle: { backgroundColor: colors.danger, fontSize: 10 },
+        }}
+      />
       <Tab.Screen name="Profil" component={RenterProfileScreen as any} />
     </Tab.Navigator>
   );

@@ -1,13 +1,29 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useEffect } from 'react';
+import { createDebouncer } from '../lib/debounce';
 import {
   fetchVehicles,
   fetchVehicleById,
   createVehicle,
   updateVehicle,
   updateVehicleStatus,
+  subscribeToVehicles,
 } from '../api/vehicles';
 
 export function useVehicles(mitraId?: string) {
+  const queryClient = useQueryClient();
+
+  useEffect(() => {
+    const refresh = createDebouncer(() => {
+      queryClient.invalidateQueries({ queryKey: ['vehicles'] });
+    });
+    const unsubscribe = subscribeToVehicles(refresh);
+    return () => {
+      refresh.cancel();
+      unsubscribe();
+    };
+  }, [queryClient]);
+
   return useQuery({
     queryKey: ['vehicles', mitraId ?? 'all'],
     queryFn: () => fetchVehicles(mitraId),

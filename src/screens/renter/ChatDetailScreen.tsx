@@ -1,8 +1,20 @@
-import React, { useState } from 'react';
-import { Alert, Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
+import React, { useCallback, useMemo, useRef, useState } from 'react';
+import {
+  Alert,
+  KeyboardAvoidingView,
+  Linking,
+  PanResponder,
+  Platform,
+  Pressable,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TextInput,
+  View,
+} from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
-import { AlertTriangle, Send } from 'lucide-react-native';
+import { AlertTriangle, Check, CheckCheck, Send } from 'lucide-react-native';
 import { RootStackParamList } from '../../navigation/types';
 import { AppHeader } from '../../components/AppHeader';
 import { colors } from '../../theme/colors';
@@ -14,17 +26,61 @@ import { useChatMessages, useChatThread, useSendMessage } from '../../hooks/useC
 type Props = NativeStackScreenProps<RootStackParamList, 'ChatDetail'>;
 
 export default function ChatDetailScreen({ navigation, route }: Props) {
-  const { user } = useAuth();
+  const { user, profile } = useAuth();
   const { data } = useChatMessages(route.params.id, user?.id);
   const { data: thread } = useChatThread(route.params.id, user?.id);
   const sendMessage = useSendMessage();
   const messages = data ?? [];
   const [draft, setDraft] = useState('');
-  const [emergency, setEmergency] = useState(false);
+  const [emergency] = useState(false);
+  const scrollViewRef = useRef<any>(null);
+
+  const handleEmergencyCall = useCallback(async () => {
+    const rawPhone = thread?.phone?.trim();
+    if (!rawPhone) {
+      Alert.alert(
+        'Nomor Tidak Tersedia',
+        'Nomor telepon mitra belum terdaftar pada profil akun mitra.',
+        [{ text: 'OK' }]
+      );
+      return;
+    }
+
+    const cleaned = rawPhone.replace(/[^\d+]/g, '');
+    const telUrl = `tel:${cleaned}`;
+
+    try {
+      await Linking.openURL(telUrl);
+
+      if (user) {
+        sendMessage.mutate({
+          chatId: route.params.id,
+          senderId: user.id,
+          body: '🚨 [DARURAT] Penyewa menghubungi Mitra melalui panggilan darurat.',
+          kind: 'emergency',
+        });
+      }
+    } catch (err) {
+      Alert.alert('Gagal Melakukan Panggilan', err instanceof Error ? err.message : 'Silakan coba lagi.');
+    }
+  }, [thread?.phone, user, sendMessage, route.params.id]);
+
+  const panResponder = useMemo(
+    () =>
+      PanResponder.create({
+        onStartShouldSetPanResponder: () => true,
+        onPanResponderRelease: (_, gestureState) => {
+          if (gestureState.dy < -20 || (Math.abs(gestureState.dx) < 10 && Math.abs(gestureState.dy) < 10)) {
+            handleEmergencyCall();
+          }
+        },
+      }),
+    [handleEmergencyCall]
+  );
 
   const send = async () => {
     const text = draft.trim();
-    if (!text) return;
+    if (!text || sendMessage.isPending) return;
     setDraft('');
 
     if (!user) {
@@ -36,9 +92,12 @@ export default function ChatDetailScreen({ navigation, route }: Props) {
       await sendMessage.mutateAsync({
         chatId: route.params.id,
         senderId: user.id,
-        body: text,
+        body: emergency ? `[DARURAT] ${text}` : text,
+        kind: emergency ? 'emergency' : 'text',
       });
+      setTimeout(() => scrollViewRef.current?.scrollToEnd({ animated: true }), 100);
     } catch (error) {
+      setDraft(text);
       Alert.alert('Pesan gagal dikirim', error instanceof Error ? error.message : 'Coba lagi.');
     }
   };
@@ -47,43 +106,72 @@ export default function ChatDetailScreen({ navigation, route }: Props) {
     <SafeAreaView style={styles.container}>
       <AppHeader title={thread?.name ?? 'Chat'} onBack={() => navigation.goBack()} />
 
-      <Pressable
-        style={[styles.emergency, emergency && styles.emergencyActive]}
-        onPress={() => setEmergency((v) => !v)}
+      {profile?.role !== 'mitra' ? (
+        <View
+          {...panResponder.panHandlers}
+          style={[styles.emergency, emergency && styles.emergencyActive]}
+        >
+          <AlertTriangle size={16} color={emergency ? colors.text.white : colors.danger} />
+          <Text style={[styles.emergencyText, emergency && styles.emergencyTextActive]}>
+            {thread?.phone
+              ? `Usap ke atas untuk panggilan darurat (${thread.name})`
+              : 'Usap ke atas untuk mengaktifkan panggilan darurat'}
+          </Text>
+        </View>
+      ) : null}
+
+      <KeyboardAvoidingView
+        style={{ flex: 1 }}
+        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
       >
-        <AlertTriangle size={16} color={emergency ? colors.text.white : colors.danger} />
-        <Text style={[styles.emergencyText, emergency && styles.emergencyTextActive]}>
-          {emergency ? 'Dering Darurat Aktif — Hubungi 112' : 'Usap ke atas untuk mengaktifkan pesan darurat'}
-        </Text>
-      </Pressable>
-
-      <View style={styles.messages}>
-        {messages.map((message) => (
-          <View
-            key={message.id}
-            style={[styles.bubble, message.fromMe ? styles.bubbleMe : styles.bubbleThem]}
-          >
-            <Text style={[styles.messageText, message.fromMe && styles.messageTextMe]}>
-              {message.text}
+        <ScrollView
+          ref={scrollViewRef}
+          style={styles.messages}
+          contentContainerStyle={{ gap: spacing.sm, paddingBottom: spacing.md }}
+          onContentSizeChange={() => scrollViewRef.current?.scrollToEnd({ animated: true })}
+        >
+          {messages.length === 0 ? (
+            <Text style={{ ...typography.caption, color: colors.text.muted, textAlign: 'center', marginTop: spacing.xl }}>
+              Belum ada pesan. Mulai percakapan dengan mengetik di bawah.
             </Text>
-            <Text style={[styles.time, message.fromMe && styles.timeMe]}>{message.time}</Text>
-          </View>
-        ))}
-      </View>
+          ) : (
+            messages.map((message) => (
+              <View
+                key={message.id}
+                style={[styles.bubble, message.fromMe ? styles.bubbleMe : styles.bubbleThem]}
+              >
+                <Text style={[styles.messageText, message.fromMe && styles.messageTextMe]}>
+                  {message.text}
+                </Text>
+                <View style={styles.metaRow}>
+                  <Text style={[styles.time, message.fromMe && styles.timeMe]}>{message.time}</Text>
+                  {message.fromMe ? (
+                    message.read ? (
+                      <CheckCheck size={12} color={message.fromMe ? 'rgba(255,255,255,0.9)' : colors.text.muted} />
+                    ) : (
+                      <Check size={12} color={message.fromMe ? 'rgba(255,255,255,0.7)' : colors.text.muted} />
+                    )
+                  ) : null}
+                </View>
+              </View>
+            ))
+          )}
+        </ScrollView>
 
-      <View style={styles.inputBar}>
-        <TextInput
-          style={styles.input}
-          placeholder="Tulis pesan..."
-          placeholderTextColor={colors.text.muted}
-          value={draft}
-          onChangeText={setDraft}
-          multiline
-        />
-        <Pressable style={styles.send} onPress={send} disabled={sendMessage.isPending}>
-          <Send size={18} color={colors.text.white} />
-        </Pressable>
-      </View>
+        <View style={styles.inputBar}>
+          <TextInput
+            style={styles.input}
+            placeholder="Tulis pesan..."
+            placeholderTextColor={colors.text.muted}
+            value={draft}
+            onChangeText={setDraft}
+            multiline
+          />
+          <Pressable style={styles.send} onPress={send} disabled={sendMessage.isPending}>
+            <Send size={18} color={colors.text.white} />
+          </Pressable>
+        </View>
+      </KeyboardAvoidingView>
     </SafeAreaView>
   );
 }
@@ -139,6 +227,12 @@ const styles = StyleSheet.create({
   },
   messageTextMe: {
     color: colors.text.white,
+  },
+  metaRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    alignSelf: 'flex-end',
+    gap: 3,
   },
   time: {
     ...typography.caption,

@@ -85,7 +85,7 @@ export default function DatePickerScreen({ navigation, route }: Props) {
       Alert.alert('Pilih periode', 'Pilih tanggal mulai dan tanggal selesai.');
       return;
     }
-    navigation.navigate('BookingCheckout', { vehicleId: route.params.vehicleId, startDate, endDate });
+    navigation.navigate('BookingGateway', { vehicleId: route.params.vehicleId, startDate, endDate });
   };
 
   return (

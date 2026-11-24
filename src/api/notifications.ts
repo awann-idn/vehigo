@@ -29,13 +29,57 @@ export async function fetchNotifications(userId?: string): Promise<NotificationI
       body: n.body,
       time: relativeTime(n.created_at),
       tone: n.type === 'success' ? 'success' : n.type === 'warning' ? 'warning' : 'info',
+      read: !!n.read_at,
+      linkType: n.link_type === 'chat' || n.link_type === 'order' ? n.link_type : null,
+      linkId: n.link_id ?? null,
+      category: n.category === 'chat' || n.category === 'promo' ? n.category : 'order',
     }));
   } catch (error) {
     throw error instanceof Error ? error : new Error('Gagal memuat notifikasi');
   }
 }
 
+export function subscribeToNotifications(userId: string, onUpdate: () => void) {
+  const channelId = `notif_${userId}_${Date.now()}_${Math.random().toString(36).slice(2, 7)}`;
+  const channel = supabase
+    .channel(channelId)
+    .on(
+      'postgres_changes',
+      {
+        event: '*',
+        schema: 'public',
+        table: 'notifications',
+        filter: `user_id=eq.${userId}`,
+      },
+      () => {
+        onUpdate();
+      }
+    )
+    .subscribe();
+
+  return () => {
+    supabase.removeChannel(channel);
+  };
+}
+
 export async function markNotificationRead(id: string) {
   const { error } = await supabase.from('notifications').update({ read_at: new Date().toISOString() }).eq('id', id);
+  if (error) throw new Error(error.message);
+}
+
+export async function markAllNotificationsRead(userId: string) {
+  const { error } = await supabase
+    .from('notifications')
+    .update({ read_at: new Date().toISOString() })
+    .eq('user_id', userId)
+    .is('read_at', null);
+  if (error) throw new Error(error.message);
+}
+
+export async function markLinkRead(linkType: 'chat' | 'order', linkId: string) {
+  const { error } = await supabase.rpc('mark_link_read', {
+    p_link_type: linkType,
+    p_link_id: linkId,
+  });
   if (error) throw new Error(error.message);
 }

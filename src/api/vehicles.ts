@@ -36,7 +36,12 @@ export async function fetchVehicles(mitraId?: string): Promise<Vehicle[]> {
       .select('*')
       .order('created_at', { ascending: false });
 
-    if (mitraId) query = query.eq('mitra_id', mitraId);
+    if (mitraId) {
+      query = query.eq('mitra_id', mitraId);
+    } else {
+      // Catalog renter hanya menampilkan unit yang benar-benar bisa dipesan.
+      query = query.eq('status', 'tersedia');
+    }
 
     const { data, error } = await query;
 
@@ -190,4 +195,19 @@ export async function updateVehicleStatus(id: string, status: 'tersedia' | 'dise
     throw new Error(error.message);
   }
   return data;
+}
+
+export function subscribeToVehicles(onUpdate: () => void) {
+  const channelId = `vehicles_${Date.now()}_${Math.random().toString(36).slice(2, 7)}`;
+  const channel = supabase
+    .channel(channelId)
+    .on(
+      'postgres_changes',
+      { event: '*', schema: 'public', table: 'vehicles' },
+      () => onUpdate()
+    )
+    .subscribe();
+  return () => {
+    supabase.removeChannel(channel);
+  };
 }

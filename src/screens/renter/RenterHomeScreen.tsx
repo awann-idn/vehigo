@@ -11,12 +11,16 @@ import { typography } from '../../theme/typography';
 import { formatRupiah } from '../../lib/formatters';
 import { useVehicles } from '../../hooks/useVehicles';
 import { useMitras } from '../../hooks/useMitras';
+import { useAuth } from '../../features/auth/useAuth';
+import { useUnreadNotificationsCount } from '../../hooks/useNotifications';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'RenterApp'>;
 
 export default function RenterHomeScreen({ navigation }: Props) {
+  const { user } = useAuth();
   const { data: vehicles = [], isLoading, isError } = useVehicles();
   const { data: mitras = [] } = useMitras();
+  const unreadCount = useUnreadNotificationsCount(user?.id);
 
   return (
     <Screen scroll>
@@ -30,7 +34,7 @@ export default function RenterHomeScreen({ navigation }: Props) {
         </View>
         <Pressable style={styles.bell} onPress={() => navigation.navigate('Notifikasi' as never)}>
           <Bell size={20} color={colors.primary} />
-          <View style={styles.dot} />
+          {unreadCount > 0 ? <View style={styles.dot} /> : null}
         </Pressable>
       </View>
 

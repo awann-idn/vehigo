@@ -17,7 +17,14 @@ import { useAuth } from '../../features/auth/useAuth';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'OwnerApp'>;
 
-const tabs = ['Semua', 'Belum Bayar', 'Berlangsung', 'Selesai', 'Denda', 'Draft WhatsApp'];
+const tabs = ['Semua', 'Menunggu', 'Berlangsung', 'Selesai', 'Dibatalkan'];
+
+function matchesTab(status: string, tab: string) {
+  if (tab === 'Semua') return true;
+  if (tab === 'Menunggu') return status === 'Belum Bayar' || status === 'Menunggu Konfirmasi';
+  if (tab === 'Selesai') return status === 'Selesai' || status === 'Denda';
+  return status === tab;
+}
 
 export default function OwnerOrdersScreen({ navigation }: Props) {
   const { user } = useAuth();
@@ -30,9 +37,10 @@ export default function OwnerOrdersScreen({ navigation }: Props) {
     () =>
       ownerOrders.filter(
         (order) =>
-          (tab === 'Semua' || order.status === tab) &&
+          (matchesTab(order.status, tab)) &&
           (order.code.toLowerCase().includes(query.toLowerCase()) ||
-            order.renter.toLowerCase().includes(query.toLowerCase()))
+            order.renter.toLowerCase().includes(query.toLowerCase()) ||
+            order.vehicle.toLowerCase().includes(query.toLowerCase()))
       ),
     [query, tab, ownerOrders]
   );
@@ -78,9 +86,11 @@ export default function OwnerOrdersScreen({ navigation }: Props) {
                   tone={
                     order.status === 'Selesai'
                       ? 'success'
-                      : order.status === 'Denda' || order.status === 'Dibatalkan'
-                        ? 'danger'
-                        : 'warning'
+                      : order.status === 'Berlangsung'
+                        ? 'neutral'
+                        : order.status === 'Denda' || order.status === 'Dibatalkan'
+                          ? 'danger'
+                          : 'warning'
                   }
                 />
               </View>

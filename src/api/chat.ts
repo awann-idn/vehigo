@@ -76,6 +76,7 @@ export async function fetchChatMessages(
       fromMe: !!userId && m.sender_id === userId,
       text: m.body,
       time: formatTime(m.created_at),
+      read: !!m.read_at,
     }));
   } catch (error) {
     throw error instanceof Error ? error : new Error('Gagal memuat pesan');
@@ -88,8 +89,13 @@ export async function fetchChatThread(chatId: string, userId?: string): Promise<
   if (!data) return null;
 
   const counterpartId = data.renter_id === userId ? data.mitra_id : data.renter_id;
-  const [nameMap, messagesResult] = await Promise.all([
+  const [nameMap, counterpartProfile, messagesResult] = await Promise.all([
     fetchProfileNames([counterpartId]),
+    (supabase as any)
+      .from('profile_directory')
+      .select('full_name, phone')
+      .eq('id', counterpartId)
+      .maybeSingle(),
     supabase
       .from('messages')
       .select('id, sender_id, body, read_at, created_at')
@@ -104,11 +110,15 @@ export async function fetchChatThread(chatId: string, userId?: string): Promise<
     id: data.id,
     name:
       nameMap.get(counterpartId)?.trim() ||
+      counterpartProfile.data?.full_name?.trim() ||
       (data.renter_id === userId ? 'Mitra rental' : 'Penyewa rental'),
     lastMessage: last?.body ?? 'Buka percakapan',
     time: formatTime(last?.created_at ?? data.created_at),
     unread: messages.filter((message) => message.sender_id !== userId && !message.read_at).length,
     online: false,
+    phone: counterpartProfile.data?.phone ?? undefined,
+    counterpartId,
+    orderId: data.order_id,
   };
 }
 
@@ -117,7 +127,8 @@ export async function markChatRead(chatId: string): Promise<void> {
   if (error) throw new Error(error.message);
 }
 
-export async function sendChatMessage(chatId: string, senderId: string, body: string, kind: 'text' | 'emergency' = 'text') {  const { data, error } = await supabase
+export async function sendChatMessage(chatId: string, senderId: string, body: string, kind: 'text' | 'emergency' = 'text') {
+  const { data, error } = await supabase
     .from('messages')
     .insert([
       {
@@ -161,12 +172,13 @@ export function subscribeToChatMessages(
   chatId: string,
   onNewMessage: (msg: any) => void
 ) {
+  const channelId = `chat_${chatId}_${Date.now()}_${Math.random().toString(36).slice(2, 7)}`;
   const channel = supabase
-    .channel(`chat:${chatId}`)
+    .channel(channelId)
     .on(
       'postgres_changes',
       {
-        event: 'INSERT',
+        event: '*',
         schema: 'public',
         table: 'messages',
         filter: `chat_id=eq.${chatId}`,

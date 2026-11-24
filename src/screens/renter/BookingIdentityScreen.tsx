@@ -62,7 +62,13 @@ export default function BookingIdentityScreen({ navigation, route }: Props) {
 
         <PrimaryButton
           label="Lanjutkan"
-          onPress={() => navigation.navigate('BookingCheckout', { vehicleId: route.params.vehicleId })}
+          onPress={() =>
+            navigation.navigate('BookingCheckout', {
+              vehicleId: route.params.vehicleId,
+              startDate: route.params.startDate,
+              endDate: route.params.endDate,
+            })
+          }
         />
       </View>
     </Screen>

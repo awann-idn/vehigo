@@ -14,7 +14,7 @@ import { spacing } from '../../theme/spacing';
 import { typography } from '../../theme/typography';
 import { useAuth } from '../../features/auth/useAuth';
 import { useOrder } from '../../hooks/useOrders';
-import { createReview } from '../../api/reviews';
+import { useCreateReview } from '../../hooks/useReviews';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'Rating'>;
 
@@ -25,7 +25,7 @@ export default function RatingScreen({ navigation, route }: Props) {
   const [vehicleRating, setVehicleRating] = useState(5);
   const [mitraRating, setMitraRating] = useState(5);
   const [comment, setComment] = useState('');
-  const [submitting, setSubmitting] = useState(false);
+  const createReview = useCreateReview();
 
   const submit = async () => {
     if (step === 1) {
@@ -38,12 +38,11 @@ export default function RatingScreen({ navigation, route }: Props) {
       return;
     }
 
-    setSubmitting(true);
     let succeeded = false;
     try {
       await Promise.all([
         order.vehicleId
-          ? createReview({
+          ? createReview.mutateAsync({
               orderId: order.id,
               authorId: user.id,
               targetType: 'vehicle',
@@ -53,7 +52,7 @@ export default function RatingScreen({ navigation, route }: Props) {
             })
           : Promise.resolve(false),
         order.mitraId
-          ? createReview({
+          ? createReview.mutateAsync({
               orderId: order.id,
               authorId: user.id,
               targetType: 'mitra',
@@ -65,10 +64,12 @@ export default function RatingScreen({ navigation, route }: Props) {
       succeeded = true;
     } catch (error) {
       Alert.alert('Gagal mengirim ulasan', error instanceof Error ? error.message : 'Coba lagi.');
-    } finally {
-      setSubmitting(false);
     }
-    if (succeeded) navigation.replace('RenterApp');
+    if (succeeded) {
+      Alert.alert('Terima Kasih', 'Ulasan dan penilaian Anda berhasil dikirim.', [
+        { text: 'Selesai', onPress: () => navigation.replace('RenterApp') },
+      ]);
+    }
   };
 
   return (
@@ -107,7 +108,7 @@ export default function RatingScreen({ navigation, route }: Props) {
       <View style={styles.footer}>
         <PrimaryButton
           label={step === 1 ? 'Lanjutkan' : 'Kirim Ulasan'}
-          loading={submitting}
+          loading={createReview.isPending}
           onPress={submit}
         />
         <Pressable style={styles.skip} onPress={() => navigation.replace('RenterApp')}>

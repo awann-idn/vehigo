@@ -14,13 +14,19 @@ import { typography } from '../../theme/typography';
 import { formatRupiah } from '../../lib/formatters';
 import { useOrder, useUpdateOrderStatus } from '../../hooks/useOrders';
 import { useAuth } from '../../features/auth/useAuth';
+import { useMarkLinkRead } from '../../hooks/useNotifications';
 import { getOrCreateChat } from '../../api/chat';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'OwnerOrderDetail'>;
 
 export default function OwnerOrderDetailScreen({ navigation, route }: Props) {
   const { user } = useAuth();
+  const markLinkRead = useMarkLinkRead();
+  const markLink = markLinkRead.mutate;
   const { data: order, isLoading } = useOrder(route.params.id);
+  React.useEffect(() => {
+    if (order?.id) markLink({ linkType: 'order', linkId: order.id });
+  }, [order?.id, markLink]);
   const updateStatus = useUpdateOrderStatus();
 
   const openChat = async () => {
@@ -30,7 +36,7 @@ export default function OwnerOrderDetailScreen({ navigation, route }: Props) {
     }
     try {
       const chat = await getOrCreateChat(order.id, order.renterId, order.mitraId);
-      navigation.navigate('ChatDetail', { id: chat.id });
+      navigation.navigate('OwnerChatDetail', { id: chat.id });
     } catch (error) {
       Alert.alert('Chat tidak tersedia', error instanceof Error ? error.message : 'Coba lagi.');
     }
@@ -46,13 +52,13 @@ export default function OwnerOrderDetailScreen({ navigation, route }: Props) {
   }
 
   const nextStatus =
-    order.status === 'Belum Bayar'
+    order.status === 'Belum Bayar' || order.status === 'Menunggu Konfirmasi'
       ? ('berlangsung' as const)
       : order.status === 'Berlangsung' || order.status === 'Denda'
         ? ('selesai' as const)
         : null;
   const actionLabel =
-    order.status === 'Belum Bayar' ? 'Konfirmasi Pesanan' : 'Selesaikan Pesanan';
+    nextStatus === 'berlangsung' ? 'Konfirmasi Pesanan' : 'Selesaikan Pesanan';
 
   const handleConfirm = () => {
     if (!nextStatus) return;
@@ -73,13 +79,52 @@ export default function OwnerOrderDetailScreen({ navigation, route }: Props) {
     );
   };
 
+  const handleReject = () => {
+    Alert.alert(
+      'Tolak Pesanan',
+      'Apakah Anda yakin ingin menolak pesanan ini?',
+      [
+        { text: 'Batal', style: 'cancel' },
+        {
+          text: 'Tolak Pesanan',
+          style: 'destructive',
+          onPress: () => {
+            updateStatus.mutate(
+              { id: order.id, status: 'dibatalkan' },
+              {
+                onSuccess: () => {
+                  Alert.alert('Sukses', 'Pesanan telah ditolak.');
+                  navigation.goBack();
+                },
+                onError: (err) => {
+                  Alert.alert('Error', err.message);
+                },
+              }
+            );
+          },
+        },
+      ]
+    );
+  };
+
   return (
     <Screen scroll>
       <AppHeader title="Detail Pesanan" onBack={() => navigation.goBack()} />
 
       <View style={styles.codeRow}>
         <Text style={styles.code}>{order.code}</Text>
-        <StatusBadge label={order.status} tone={order.status === 'Selesai' ? 'success' : 'warning'} />
+        <StatusBadge
+          label={order.status}
+          tone={
+            order.status === 'Selesai'
+              ? 'success'
+              : order.status === 'Berlangsung'
+                ? 'neutral'
+                : order.status === 'Dibatalkan'
+                  ? 'danger'
+                  : 'warning'
+          }
+        />
       </View>
 
       <Card style={styles.card}>
@@ -101,7 +146,21 @@ export default function OwnerOrderDetailScreen({ navigation, route }: Props) {
           variant="secondary"
           onPress={openChat}
         />
-        {nextStatus ? (
+        {order.status === 'Belum Bayar' ? (
+          <>
+            <PrimaryButton
+              label="Konfirmasi Pesanan"
+              onPress={handleConfirm}
+              loading={updateStatus.isPending}
+            />
+            <PrimaryButton
+              label="Tolak Pesanan"
+              variant="secondary"
+              onPress={handleReject}
+              loading={updateStatus.isPending}
+            />
+          </>
+        ) : nextStatus ? (
           <PrimaryButton
             label={actionLabel}
             onPress={handleConfirm}

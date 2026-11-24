@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { ActivityIndicator, Alert, StyleSheet, Text, View } from 'react-native';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { Calendar, Car, CreditCard, MessageCircle, User } from 'lucide-react-native';
@@ -12,15 +12,24 @@ import { colors } from '../../theme/colors';
 import { spacing } from '../../theme/spacing';
 import { typography } from '../../theme/typography';
 import { formatRupiah } from '../../lib/formatters';
-import { useOrder } from '../../hooks/useOrders';
+import { useOrder, useUpdateOrderStatus } from '../../hooks/useOrders';
 import { getOrCreateChat } from '../../api/chat';
 import { useAuth } from '../../features/auth/useAuth';
+import { useMarkLinkRead } from '../../hooks/useNotifications';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'RenterOrderDetail'>;
 
 export default function RenterOrderDetailScreen({ navigation, route }: Props) {
   const { data: order, isLoading } = useOrder(route.params.id);
+  const updateStatus = useUpdateOrderStatus();
   const { user } = useAuth();
+  const markLinkRead = useMarkLinkRead();
+  const markLink = markLinkRead.mutate;
+  React.useEffect(() => {
+    if (order?.id) markLink({ linkType: 'order', linkId: order.id });
+  }, [order?.id, markLink]);
+  const canCancel = order?.status === 'Belum Bayar' || order?.status === 'Menunggu Konfirmasi';
+  const [cancelling, setCancelling] = useState(false);
 
   if (isLoading || !order) {
     return (
@@ -31,13 +40,45 @@ export default function RenterOrderDetailScreen({ navigation, route }: Props) {
     );
   }
 
+  const handleCancelOrder = () => {
+    Alert.alert(
+      'Batalkan Pesanan',
+      'Apakah Anda yakin ingin membatalkan pesanan ini?',
+      [
+        { text: 'Tidak', style: 'cancel' },
+        {
+          text: 'Ya, Batalkan',
+          style: 'destructive',
+          onPress: async () => {
+            setCancelling(true);
+            try {
+              await updateStatus.mutateAsync({ id: order.id, status: 'dibatalkan' });
+              Alert.alert('Pesanan Dibatalkan', 'Pesanan Anda telah berhasil dibatalkan.');
+            } catch (error) {
+              Alert.alert('Gagal membatalkan', error instanceof Error ? error.message : 'Silakan coba lagi.');
+            } finally {
+              setCancelling(false);
+            }
+          },
+        },
+      ]
+    );
+  };
+
+  const getTone = (status: string) => {
+    if (status === 'Selesai') return 'success';
+    if (status === 'Berlangsung') return 'neutral';
+    if (status === 'Dibatalkan') return 'danger';
+    return 'warning';
+  };
+
   return (
     <Screen scroll>
       <AppHeader title="Rincian Pesanan" onBack={() => navigation.goBack()} />
 
       <View style={styles.codeRow}>
         <Text style={styles.code}>{order.code}</Text>
-        <StatusBadge label={order.status} tone={order.status === 'Selesai' ? 'success' : 'warning'} />
+        <StatusBadge label={order.status} tone={getTone(order.status)} />
       </View>
 
       <Card style={styles.card}>
@@ -53,6 +94,41 @@ export default function RenterOrderDetailScreen({ navigation, route }: Props) {
       </View>
 
       <View style={styles.actions}>
+        {canCancel ? (
+          <>
+            <PrimaryButton
+              label={order.status === 'Menunggu Konfirmasi' ? 'Menunggu Konfirmasi Mitra' : 'Bayar Sekarang'}
+              onPress={() => {
+                navigation.navigate('BookingPayment', {
+                  vehicleId: order.vehicleId ?? '',
+                  orderId: order.id,
+                  total: order.total,
+                });
+              }}
+            />
+            <PrimaryButton
+              label="Batalkan Pesanan"
+              variant="secondary"
+              loading={cancelling}
+              onPress={handleCancelOrder}
+            />
+          </>
+        ) : null}
+
+        {order.status === 'Berlangsung' ? (
+          <PrimaryButton
+            label="Akhiri Pemakaian"
+            onPress={() => navigation.navigate('Inspection', { id: order.id })}
+          />
+        ) : null}
+
+        {order.status === 'Selesai' ? (
+          <PrimaryButton
+            label="Beri Rating"
+            onPress={() => navigation.navigate('Rating', { id: order.id })}
+          />
+        ) : null}
+
         <PrimaryButton
           label="Hubungi Mitra"
           variant="secondary"
@@ -66,18 +142,6 @@ export default function RenterOrderDetailScreen({ navigation, route }: Props) {
             }
           }}
         />
-        {order.status === 'Berlangsung' ? (
-          <PrimaryButton
-            label="Akhiri Pemakaian"
-            onPress={() => navigation.navigate('Inspection', { id: order.id })}
-          />
-        ) : null}
-        {order.status === 'Selesai' ? (
-          <PrimaryButton
-            label="Beri Rating"
-            onPress={() => navigation.navigate('Rating', { id: order.id })}
-          />
-        ) : null}
       </View>
 
       <View style={styles.chatHint}>

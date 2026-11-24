@@ -17,7 +17,19 @@ import { useOrders } from '../../hooks/useOrders';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'RenterApp'>;
 
-const tabs = ['Semua', 'Belum Bayar', 'Berlangsung', 'Selesai', 'Denda'];
+const tabs = ['Semua', 'Menunggu', 'Aktif', 'Selesai', 'Dibatalkan'];
+
+const tabStatuses: Record<string, string[]> = {
+  Menunggu: ['Belum Bayar', 'Menunggu Konfirmasi'],
+  Aktif: ['Berlangsung'],
+  Selesai: ['Selesai', 'Denda'],
+  Dibatalkan: ['Dibatalkan'],
+};
+
+function matchesTab(status: string, tab: string) {
+  if (tab === 'Semua') return true;
+  return (tabStatuses[tab] ?? [tab]).includes(status);
+}
 
 export default function RenterOrdersScreen({ navigation }: Props) {
   const { user } = useAuth();
@@ -26,7 +38,7 @@ export default function RenterOrdersScreen({ navigation }: Props) {
   const { data: orders = [], isLoading } = useOrders('renter', user?.id);
 
   const data = useMemo(
-    () => orders.filter((order) => tab === 'Semua' || order.status === tab),
+    () => orders.filter((order) => matchesTab(order.status, tab)),
     [orders, tab]
   );
 
@@ -74,9 +86,9 @@ export default function RenterOrdersScreen({ navigation }: Props) {
                   <Text style={styles.meta}>Total: {formatRupiah(order.total)}</Text>
                 </View>
               </View>
-              {order.status === 'Belum Bayar' ? (
+              {order.status === 'Belum Bayar' || order.status === 'Menunggu Konfirmasi' ? (
                 <PrimaryButton
-                  label="Bayar Sekarang"
+                  label={order.status === 'Menunggu Konfirmasi' ? 'Menunggu Mitra' : 'Bayar Sekarang'}
                   onPress={() => {
                     if (!order.vehicleId) return;
                     navigation.navigate('BookingPayment', {

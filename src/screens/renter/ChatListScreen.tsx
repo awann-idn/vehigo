@@ -1,9 +1,10 @@
 import React from 'react';
-import { Pressable, StyleSheet, Text, View } from 'react-native';
+import { ActivityIndicator, Pressable, StyleSheet, Text, View } from 'react-native';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { MessageCircle } from 'lucide-react-native';
 import { RootStackParamList } from '../../navigation/types';
 import { Screen } from '../../components/Screen';
+import { EmptyState } from '../../components/EmptyState';
 import { colors } from '../../theme/colors';
 import { spacing } from '../../theme/spacing';
 import { typography } from '../../theme/typography';
@@ -14,7 +15,7 @@ type Props = NativeStackScreenProps<RootStackParamList, 'RenterApp'>;
 
 export default function ChatListScreen({ navigation }: Props) {
   const { user } = useAuth();
-  const { data: chatThreads = [] } = useChatThreads(user?.id);
+  const { data: chatThreads = [], isLoading } = useChatThreads(user?.id);
 
   return (
     <Screen scroll>
@@ -23,34 +24,44 @@ export default function ChatListScreen({ navigation }: Props) {
         <Text style={styles.subtitle}>Obrolan Anda dengan mitra</Text>
       </View>
 
-      <View style={styles.list}>
-        {chatThreads.map((thread) => (
-          <Pressable
-            key={thread.id}
-            style={styles.row}
-            onPress={() => navigation.navigate('ChatDetail', { id: thread.id })}
-          >
-            <View style={styles.avatar}>
-              <MessageCircle size={20} color={colors.primary} />
-              {thread.online ? <View style={styles.online} /> : null}
-            </View>
-            <View style={styles.text}>
-              <Text style={styles.name}>{thread.name}</Text>
-              <Text style={styles.last} numberOfLines={1}>
-                {thread.lastMessage}
-              </Text>
-            </View>
-            <View style={styles.right}>
-              <Text style={styles.time}>{thread.time}</Text>
-              {thread.unread > 0 ? (
-                <View style={styles.unread}>
-                  <Text style={styles.unreadText}>{thread.unread}</Text>
-                </View>
-              ) : null}
-            </View>
-          </Pressable>
-        ))}
-      </View>
+      {isLoading ? (
+        <ActivityIndicator size="large" color={colors.primary} style={{ marginTop: spacing.xl }} />
+      ) : chatThreads.length === 0 ? (
+        <EmptyState
+          icon={MessageCircle}
+          title="Belum ada pesan"
+          message="Obrolan dengan mitra terkait pesanan rental Anda akan muncul di sini."
+        />
+      ) : (
+        <View style={styles.list}>
+          {chatThreads.map((thread) => (
+            <Pressable
+              key={thread.id}
+              style={styles.row}
+              onPress={() => navigation.navigate('ChatDetail', { id: thread.id })}
+            >
+              <View style={styles.avatar}>
+                <MessageCircle size={20} color={colors.primary} />
+                {thread.online ? <View style={styles.online} /> : null}
+              </View>
+              <View style={styles.text}>
+                <Text style={styles.name}>{thread.name}</Text>
+                <Text style={styles.last} numberOfLines={1}>
+                  {thread.lastMessage}
+                </Text>
+              </View>
+              <View style={styles.right}>
+                <Text style={styles.time}>{thread.time}</Text>
+                {thread.unread > 0 ? (
+                  <View style={styles.unread}>
+                    <Text style={styles.unreadText}>{thread.unread}</Text>
+                  </View>
+                ) : null}
+              </View>
+            </Pressable>
+          ))}
+        </View>
+      )}
     </Screen>
   );
 }

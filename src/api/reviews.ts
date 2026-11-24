@@ -43,16 +43,17 @@ export interface CreateReviewPayload {
 }
 
 export async function createReview(payload: CreateReviewPayload): Promise<boolean> {
-  const { error } = await supabase.from('reviews').insert([
-      {
-        order_id: payload.orderId,
-        author_id: payload.authorId,
-        target_type: payload.targetType,
-        target_id: payload.targetId,
-        rating: payload.rating,
-        body: payload.body ?? null,
-      },
-  ]);
+  const { error } = await supabase.from('reviews').upsert(
+    {
+      order_id: payload.orderId,
+      author_id: payload.authorId,
+      target_type: payload.targetType,
+      target_id: payload.targetId,
+      rating: payload.rating,
+      body: payload.body ?? null,
+    },
+    { onConflict: 'order_id,target_type' }
+  );
   if (error) throw new Error(error.message);
   return true;
 }
