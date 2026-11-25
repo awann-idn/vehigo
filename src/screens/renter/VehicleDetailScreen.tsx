@@ -1,6 +1,5 @@
 import React from 'react';
-import { Image, FlatList } from 'react-native';
-import { ActivityIndicator, Pressable, StyleSheet, Text, View } from 'react-native';
+import { ActivityIndicator, FlatList, Image, Pressable, StyleSheet, Text, View } from 'react-native';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { Car, Fuel, Settings2, ShieldCheck, Star, Users } from 'lucide-react-native';
 import { RootStackParamList } from '../../navigation/types';
