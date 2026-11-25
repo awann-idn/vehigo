@@ -1,5 +1,6 @@
 import React from 'react';
-import { Pressable, StyleSheet, Text, View } from 'react-native';
+import { useQuery } from '@tanstack/react-query';
+import { Alert, Pressable, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { Camera, CheckCircle2, FileCheck2, ScanFace, ShieldCheck } from 'lucide-react-native';
@@ -10,6 +11,8 @@ import { Card } from '../../components/Card';
 import { colors } from '../../theme/colors';
 import { spacing } from '../../theme/spacing';
 import { typography } from '../../theme/typography';
+import { useAuth } from '../../features/auth/useAuth';
+import { fetchMyDocuments } from '../../api/documents';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'OwnerVerification'>;
 
@@ -19,7 +22,22 @@ const steps = [
   { icon: ShieldCheck, title: 'Verifikasi Nomor', body: 'Kode dikirim via WhatsApp.' },
 ];
 
+const statusLabel: Record<string, string> = {
+  pending: 'Menunggu verifikasi',
+  verified: 'Terverifikasi',
+  rejected: 'Ditolak',
+};
+
 export default function OwnerVerificationScreen({ navigation }: Props) {
+  const { user } = useAuth();
+  const { data: documents = [] } = useQuery({
+    queryKey: ['myDocuments', user?.id],
+    queryFn: () => fetchMyDocuments(user?.id as string),
+    enabled: !!user?.id,
+  });
+  const ktp = documents.find((doc) => doc.kind === 'ktp');
+  const nib = documents.find((doc) => doc.kind === 'nib');
+
   return (
     <SafeAreaView style={styles.container}>
       <AppHeader title="Keamanan Akun" onBack={() => navigation.goBack()} />
@@ -35,18 +53,27 @@ export default function OwnerVerificationScreen({ navigation }: Props) {
       </View>
 
       <View style={styles.list}>
-        {steps.map(({ icon: Icon, title, body }) => (
-          <Card key={title} style={styles.item}>
-            <View style={styles.itemIcon}>
-              <Icon size={20} color={colors.primary} />
-            </View>
-            <View style={styles.itemText}>
-              <Text style={styles.itemTitle}>{title}</Text>
-              <Text style={styles.itemBody}>{body}</Text>
-            </View>
-            <CheckCircle2 size={20} color={colors.success} />
-          </Card>
-        ))}
+        {steps.map(({ icon: Icon, title, body }) => {
+          const doc = title.includes('KTP') ? ktp : null;
+          const done = doc?.status === 'verified';
+          return (
+            <Card key={title} style={styles.item}>
+              <View style={styles.itemIcon}>
+                <Icon size={20} color={colors.primary} />
+              </View>
+              <View style={styles.itemText}>
+                <Text style={styles.itemTitle}>{title}</Text>
+                <Text style={styles.itemBody}>
+                  {doc ? `${body} • ${statusLabel[doc.status]}` : title.includes('KTP') ? `${body} • Belum diunggah` : body}
+                </Text>
+              </View>
+              {done ? <CheckCircle2 size={20} color={colors.success} /> : null}
+            </Card>
+          );
+        })}
+        {nib ? (
+          <Text style={styles.uploadText}>Dokumen legalitas: {statusLabel[nib.status]}</Text>
+        ) : null}
       </View>
 
       <View style={styles.uploadHint}>
@@ -59,7 +86,14 @@ export default function OwnerVerificationScreen({ navigation }: Props) {
       <View style={styles.footer}>
         <PrimaryButton
           label="Kirim Verifikasi"
-          onPress={() => navigation.replace('OwnerApp')}
+          onPress={() => {
+            if (!ktp) {
+              Alert.alert('Dokumen belum lengkap', 'Unggah KTP pada langkah registrasi sebelum mengirim verifikasi.');
+              return;
+            }
+            Alert.alert('Verifikasi terkirim', 'Dokumen Anda sedang ditinjau admin Vehigo.');
+            navigation.replace('OwnerApp');
+          }}
         />
         <Pressable style={styles.help}>
           <Text style={styles.helpText}>Mengalami kesulitan? Hubungi Kami</Text>
