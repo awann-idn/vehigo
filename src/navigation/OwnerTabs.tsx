@@ -1,12 +1,12 @@
 import React from 'react';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
-import { Bell, Car, ClipboardList, LayoutDashboard, User } from 'lucide-react-native';
+import { Bell, Car, ClipboardList, LayoutDashboard, MessageCircle } from 'lucide-react-native';
 import { OwnerTabParamList } from './types';
 import OwnerDashboardScreen from '../screens/owner/OwnerDashboardScreen';
 import OwnerOrdersScreen from '../screens/owner/OwnerOrdersScreen';
 import OwnerFleetScreen from '../screens/owner/OwnerFleetScreen';
 import OwnerAlertsScreen from '../screens/owner/OwnerAlertsScreen';
-import OwnerProfileScreen from '../screens/owner/OwnerProfileScreen';
+import ChatListScreen from '../screens/renter/ChatListScreen';
 import { colors } from '../theme/colors';
 import { useAuth } from '../features/auth/useAuth';
 import { useUnreadNotificationsCount } from '../hooks/useNotifications';
@@ -17,8 +17,8 @@ const icons = {
   Dashboard: LayoutDashboard,
   Pesanan: ClipboardList,
   Armada: Car,
+  Chat: MessageCircle,
   Alerts: Bell,
-  Profil: User,
 };
 
 export default function OwnerTabs() {
@@ -48,6 +48,7 @@ export default function OwnerTabs() {
       <Tab.Screen name="Dashboard" component={OwnerDashboardScreen as any} />
       <Tab.Screen name="Pesanan" component={OwnerOrdersScreen as any} />
       <Tab.Screen name="Armada" component={OwnerFleetScreen as any} />
+      <Tab.Screen name="Chat" component={ChatListScreen as any} />
       <Tab.Screen
         name="Alerts"
         component={OwnerAlertsScreen as any}
@@ -56,7 +57,6 @@ export default function OwnerTabs() {
           tabBarBadgeStyle: { backgroundColor: colors.danger, fontSize: 10 },
         }}
       />
-      <Tab.Screen name="Profil" component={OwnerProfileScreen as any} />
     </Tab.Navigator>
   );
 }

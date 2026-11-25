@@ -27,24 +27,24 @@ export function TextField({ label, icon: Icon, error, secureTextEntry, style, ..
       {label ? <Text style={styles.label}>{label}</Text> : null}
       <View style={[styles.field, focused && styles.fieldFocused, !!error && styles.fieldError]}>
         {Icon ? (
-          <View style={styles.icon}>
-            <Icon size={18} color={colors.text.muted} />
+          <View style={styles.iconBadge}>
+            <Icon size={22} color={colors.primary} strokeWidth={1.8} />
           </View>
         ) : null}
         <TextInput
           style={[styles.input, style]}
-          placeholderTextColor={colors.text.muted}
+          placeholderTextColor="rgba(48,54,79,0.4)"
           secureTextEntry={hidden}
           onFocus={() => setFocused(true)}
           onBlur={() => setFocused(false)}
           {...rest}
         />
         {secureTextEntry ? (
-          <Pressable onPress={() => setHidden((v) => !v)} hitSlop={10} style={styles.icon}>
+          <Pressable onPress={() => setHidden((v) => !v)} hitSlop={10} style={styles.eye}>
             {hidden ? (
-              <Eye size={18} color={colors.text.muted} />
+              <EyeOff size={20} color={colors.primary} />
             ) : (
-              <EyeOff size={18} color={colors.text.muted} />
+              <Eye size={20} color={colors.primary} />
             )}
           </Pressable>
         ) : null}
@@ -59,29 +59,36 @@ const styles = StyleSheet.create({
     gap: spacing.sm,
   },
   label: {
-    ...typography.label,
-    color: colors.text.secondary,
-    textTransform: 'uppercase',
+    ...typography.body,
+    color: '#000000',
   },
   field: {
     flexDirection: 'row',
     alignItems: 'center',
     minHeight: 50,
     borderWidth: 1,
-    borderColor: colors.border,
+    borderColor: 'rgba(0,0,0,0.18)',
     borderRadius: 12,
-    backgroundColor: colors.surface,
-    paddingHorizontal: spacing.md,
+    backgroundColor: '#F6F3F5',
+    paddingHorizontal: 7,
     gap: spacing.sm,
   },
   fieldFocused: {
     borderColor: colors.primary,
-    backgroundColor: colors.background,
   },
   fieldError: {
     borderColor: colors.danger,
   },
-  icon: {
+  iconBadge: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    backgroundColor: '#E3E4D2',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  eye: {
+    paddingRight: spacing.sm,
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -89,6 +96,7 @@ const styles = StyleSheet.create({
     flex: 1,
     ...typography.body,
     paddingVertical: spacing.md,
+    color: colors.primary,
   },
   error: {
     ...typography.caption,

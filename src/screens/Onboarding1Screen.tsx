@@ -1,43 +1,49 @@
 import React from 'react';
-import { StyleSheet, Text, View } from 'react-native';
+import { Image, Pressable, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
-import { Car, Search, ShieldCheck } from 'lucide-react-native';
+import { StatusBar } from 'expo-status-bar';
 import { RootStackParamList } from '../navigation/types';
 import { colors } from '../theme/colors';
 import { spacing } from '../theme/spacing';
 import { typography } from '../theme/typography';
-import { PrimaryButton } from '../components/PrimaryButton';
 import { OnboardingHeader, PageDots } from '../components/OnboardingBits';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'Onboarding1'>;
 
+const PHONE = require('../../assets/figma/onboarding_phone.jpg');
+
 export default function Onboarding1Screen({ navigation }: Props) {
   return (
-    <SafeAreaView style={styles.container}>
+    <SafeAreaView style={styles.container} edges={['top', 'bottom', 'left', 'right']}>
+      <StatusBar style="dark" />
       <OnboardingHeader onSkip={() => navigation.navigate('Login')} />
 
       <View style={styles.illustration}>
-        <View style={styles.circle}>
-          <Car size={84} color={colors.primary} strokeWidth={1.3} />
-          <View style={styles.floating}>
-            <Search size={20} color={colors.text.white} />
-          </View>
-          <View style={[styles.floating, styles.floatingAlt]}>
-            <ShieldCheck size={20} color={colors.text.white} />
-          </View>
-        </View>
+        <Image source={PHONE} style={styles.photo} resizeMode="cover" />
       </View>
 
       <View style={styles.content}>
-        <Text style={styles.title}>Temukan Kendaraan Impian Anda</Text>
-        <Text style={styles.body}>
-          Ribuan pilihan kendaraan siap menemani perjalanan Anda. Sewa lebih cepat dan
-          mudah dari mana saja.
+        <Text style={styles.title}>
+          Temukan Kendaraan{'\n'}
+          <Text style={styles.titleMuted}>Impian Anda</Text>
         </Text>
+        <Text style={styles.body}>
+          Ribuan pilihan kendaraan siap menemani perjalanan Anda. Sewa lebih cepat dan mudah
+          dari mana saja
+        </Text>
+
         <PageDots total={3} active={0} />
-        <PrimaryButton label="MULAI SEKARANG" onPress={() => navigation.navigate('Onboarding2')} />
-        <Text style={styles.copyright}>© 2026 Vehigo Indonesia. Seluruh Hak Cipta Dilindungi.</Text>
+
+        <Pressable
+          style={({ pressed }) => [styles.cta, pressed && styles.pressed]}
+          onPress={() => navigation.navigate('Onboarding2')}
+        >
+          <Text style={styles.ctaText}>LANJUT</Text>
+        </Pressable>
+        <Text style={styles.copyright}>
+          © 2026 Vehigo Indonesia. Seluruh Hak Cipta Dilindungi.
+        </Text>
       </View>
     </SafeAreaView>
   );
@@ -46,57 +52,60 @@ export default function Onboarding1Screen({ navigation }: Props) {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: colors.background,
+    backgroundColor: '#FFFFFF',
     paddingHorizontal: spacing.lg,
-    paddingBottom: spacing.base,
+    paddingBottom: spacing.sm,
   },
   illustration: {
     flex: 1,
     alignItems: 'center',
     justifyContent: 'center',
+    paddingVertical: spacing.base,
   },
-  circle: {
-    width: 240,
-    height: 240,
-    borderRadius: 120,
-    backgroundColor: colors.card,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  floating: {
-    position: 'absolute',
-    top: 24,
-    right: 18,
-    width: 46,
-    height: 46,
-    borderRadius: 23,
-    backgroundColor: colors.primary,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  floatingAlt: {
-    top: undefined,
-    right: undefined,
-    bottom: 22,
-    left: 20,
-    backgroundColor: colors.secondary,
+  photo: {
+    width: 267,
+    height: 203,
+    borderRadius: 27,
   },
   content: {
-    gap: spacing.base,
     alignItems: 'center',
+    gap: spacing.base,
   },
   title: {
     ...typography.h2,
+    color: colors.primary,
     textAlign: 'center',
+  },
+  titleMuted: {
+    ...typography.h2,
+    color: '#76767E',
   },
   body: {
     ...typography.body,
+    color: '#46464D',
     textAlign: 'center',
-    color: colors.text.secondary,
+    lineHeight: 26,
+    maxWidth: 320,
+  },
+  cta: {
+    width: '100%',
+    height: 52,
+    borderRadius: 12,
+    backgroundColor: colors.primary,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginTop: spacing.sm,
+  },
+  pressed: {
+    opacity: 0.9,
+  },
+  ctaText: {
+    ...typography.button,
+    color: '#FFFFFF',
   },
   copyright: {
     ...typography.caption,
-    color: colors.text.muted,
+    color: '#757577',
     textAlign: 'center',
   },
 });

@@ -1,45 +1,55 @@
 import React from 'react';
-import { StyleSheet, Text, View } from 'react-native';
+import { Image, Pressable, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
-import { Check, ShieldCheck } from 'lucide-react-native';
+import { StatusBar } from 'expo-status-bar';
 import { RootStackParamList } from '../navigation/types';
 import { colors } from '../theme/colors';
 import { spacing } from '../theme/spacing';
 import { typography } from '../theme/typography';
-import { PrimaryButton } from '../components/PrimaryButton';
-import { PageDots } from '../components/OnboardingBits';
+import { PageDots, ShieldIllustration } from '../components/OnboardingBits';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'Onboarding3'>;
 
+const LOGO = require('../../assets/figma/vehigo_wordmark.png');
+
 export default function Onboarding3Screen({ navigation }: Props) {
   return (
-    <SafeAreaView style={styles.container}>
+    <SafeAreaView style={styles.container} edges={['top', 'bottom', 'left', 'right']}>
+      <StatusBar style="dark" />
       <View style={styles.header}>
-        <Text style={styles.brand}>VEHIGO</Text>
+        <Image source={LOGO} style={styles.logo} resizeMode="contain" />
       </View>
 
       <View style={styles.illustration}>
-        <View style={styles.halo}>
-          <View style={styles.shield}>
-            <ShieldCheck size={92} color={colors.text.white} strokeWidth={1.3} />
-            <View style={styles.checkBadge}>
-              <Check size={18} color={colors.text.white} />
-            </View>
-          </View>
-        </View>
+        <ShieldIllustration />
       </View>
 
       <View style={styles.content}>
-        <Text style={styles.title}>Transaksi Aman & Terpercaya</Text>
-        <Text style={styles.body}>
-          Semua transaksi dilindungi oleh sistem keamanan kami. Nikmati penyewaan
-          kendaraan tanpa rasa khawatir.
+        <Text style={styles.title}>
+          Transaksi{'\n'}
+          <Text style={styles.titleMuted}>Aman &amp; Terpercaya</Text>
         </Text>
+        <Text style={styles.body}>
+          Semua transaksi dilindungi oleh sistem keamanan kami. Nikmati penyewaan kendaraan
+          tanpa rasa khawatir.
+        </Text>
+
         <PageDots total={3} active={2} />
-        <PrimaryButton label="MULAI SEKARANG" onPress={() => navigation.navigate('Login')} />
+
+        <Pressable
+          style={({ pressed }) => [styles.cta, pressed && styles.pressed]}
+          onPress={() => navigation.replace('Login')}
+        >
+          <Text style={styles.ctaText}>MULAI SEKARANG</Text>
+        </Pressable>
+
         <Text style={styles.terms}>
-          Dengan melanjutkan, Anda menyetujui Syarat & Ketentuan kami.
+          Dengan melanjutkan, Anda menyetujui{' '}
+          <Text style={styles.termsLink} onPress={() => navigation.navigate('Terms')}>
+            Syarat &amp; Ketentuan
+          </Text>{' '}
+          kami.
         </Text>
       </View>
     </SafeAreaView>
@@ -49,68 +59,65 @@ export default function Onboarding3Screen({ navigation }: Props) {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: colors.background,
+    backgroundColor: '#FFFFFF',
     paddingHorizontal: spacing.lg,
-    paddingBottom: spacing.base,
+    paddingBottom: spacing.sm,
   },
   header: {
     paddingTop: spacing.base,
+    paddingBottom: spacing.sm,
   },
-  brand: {
-    ...typography.h3,
-    letterSpacing: 3,
-    color: colors.primary,
+  logo: {
+    width: 76,
+    height: 38,
   },
   illustration: {
     flex: 1,
     alignItems: 'center',
     justifyContent: 'center',
   },
-  halo: {
-    width: 250,
-    height: 250,
-    borderRadius: 125,
-    backgroundColor: colors.card,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  shield: {
-    width: 180,
-    height: 180,
-    borderRadius: 90,
-    backgroundColor: colors.primary,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  checkBadge: {
-    position: 'absolute',
-    bottom: 26,
-    right: 26,
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    backgroundColor: colors.success,
-    alignItems: 'center',
-    justifyContent: 'center',
-    borderWidth: 3,
-    borderColor: colors.background,
-  },
   content: {
-    gap: spacing.base,
     alignItems: 'center',
+    gap: spacing.base,
   },
   title: {
     ...typography.h2,
+    color: colors.primary,
     textAlign: 'center',
+  },
+  titleMuted: {
+    ...typography.h2,
+    color: '#76767E',
   },
   body: {
     ...typography.body,
+    color: '#46464D',
     textAlign: 'center',
-    color: colors.text.secondary,
+    lineHeight: 26,
+    maxWidth: 320,
+  },
+  cta: {
+    width: '100%',
+    height: 52,
+    borderRadius: 12,
+    backgroundColor: colors.primary,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginTop: spacing.sm,
+  },
+  pressed: {
+    opacity: 0.9,
+  },
+  ctaText: {
+    ...typography.button,
+    color: '#FFFFFF',
   },
   terms: {
     ...typography.caption,
-    color: colors.text.muted,
+    color: '#30364F',
     textAlign: 'center',
+  },
+  termsLink: {
+    fontFamily: 'Manrope_800ExtraBold',
   },
 });

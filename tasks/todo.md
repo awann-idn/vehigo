@@ -35,3 +35,11 @@
 - [ ] Pastikan semua migration 0001–0008 sudah diterapkan
 - [ ] Atur URL Auth + provider OAuth di Supabase
 - [ ] Uji manual sesuai `docs/PRODUCTION_CHECKLIST.md`
+
+## Figma functional implementation (new plan: tasks/plan.md)
+
+- [ ] Phase 1: Mitra registration and persistence
+- [ ] Phase 2: Mitra operations and navigation
+- [ ] Phase 3: Renter operations and navigation
+- [ ] Checkpoint: functional end-to-end flows
+- [ ] Phase 4: final QA and exports

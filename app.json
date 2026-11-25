@@ -34,7 +34,8 @@
           "cameraPermission": "Vehigo memerlukan akses kamera untuk mengambil foto kendaraan dan dokumen.",
           "microphonePermission": "Vehigo tidak merekam audio."
         }
-      ]
+      ],
+      "expo-font"
     ]
   }
 }

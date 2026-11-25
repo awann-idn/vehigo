@@ -115,7 +115,7 @@ export default function OwnerDashboardScreen({ navigation }: Props) {
           </Pressable>
           <Pressable
             style={styles.avatar}
-            onPress={() => (navigation as any).navigate('OwnerApp', { screen: 'Profil' })}
+            onPress={() => (navigation as any).navigate('OwnerBusinessProfile')}
           >
             <Text style={styles.avatarText}>{(profile?.full_name || user?.email || 'M').slice(0, 2).toUpperCase()}</Text>
           </Pressable>
@@ -136,6 +136,22 @@ export default function OwnerDashboardScreen({ navigation }: Props) {
             Pantau performa usaha dan kelola aktivitas rental Anda secara real-time.
           </Text>
         </View>
+      </Card>
+
+      <Card style={styles.checklist}>
+        <Text style={styles.checklistTitle}>LANGKAH PERSIAPAN</Text>
+        <ChecklistRow completed={!!mitraProfile} label="Profil usaha selesai" />
+        <ChecklistRow completed={vehicles.length > 0} label="Tambah kendaraan" number={2} />
+        <ChecklistRow completed={orders.length > 0} label="Mulai menerima pesanan" number={3} />
+        {vehicles.length === 0 ? (
+          <Pressable
+            style={styles.checklistButton}
+            onPress={() => navigation.navigate('OwnerAddVehicle')}
+          >
+            <Car size={18} color={colors.text.white} />
+            <Text style={styles.checklistButtonText}>TAMBAH KENDARAAN</Text>
+          </Pressable>
+        ) : null}
       </Card>
 
       <View style={styles.grid}>
@@ -238,6 +254,17 @@ export default function OwnerDashboardScreen({ navigation }: Props) {
   );
 }
 
+function ChecklistRow({ completed, label, number }: { completed: boolean; label: string; number?: number }) {
+  return (
+    <View style={styles.checklistRow}>
+      <View style={[styles.checkCircle, completed && styles.checkCircleDone]}>
+        <Text style={[styles.checkText, completed && styles.checkTextDone]}>{completed ? '✓' : number}</Text>
+      </View>
+      <Text style={[styles.checklistLabel, completed && styles.checklistLabelDone]}>{label}</Text>
+    </View>
+  );
+}
+
 const styles = StyleSheet.create({
   topBar: {
     flexDirection: 'row',
@@ -328,6 +355,66 @@ const styles = StyleSheet.create({
   bannerBody: {
     ...typography.caption,
     color: 'rgba(255,255,255,0.75)',
+  },
+  checklist: {
+    marginTop: spacing.base,
+    gap: spacing.md,
+    padding: spacing.lg,
+    borderRadius: 16,
+    backgroundColor: colors.surface,
+  },
+  checklistTitle: {
+    ...typography.label,
+    color: colors.text.primary,
+    letterSpacing: 1.2,
+  },
+  checklistRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.md,
+  },
+  checkCircle: {
+    width: 28,
+    height: 28,
+    borderRadius: 14,
+    borderWidth: 2,
+    borderColor: colors.border,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  checkCircleDone: {
+    backgroundColor: colors.accent,
+    borderColor: colors.accent,
+  },
+  checkText: {
+    ...typography.bodySm,
+    color: colors.text.muted,
+    fontWeight: '700',
+  },
+  checkTextDone: {
+    color: colors.text.white,
+  },
+  checklistLabel: {
+    ...typography.bodySm,
+    color: colors.text.secondary,
+  },
+  checklistLabelDone: {
+    color: colors.text.primary,
+    fontWeight: '700',
+  },
+  checklistButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: spacing.sm,
+    minHeight: 48,
+    borderRadius: 12,
+    backgroundColor: colors.accent,
+    marginTop: spacing.sm,
+  },
+  checklistButtonText: {
+    ...typography.button,
+    color: colors.text.white,
   },
   grid: {
     flexDirection: 'row',
