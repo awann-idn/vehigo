@@ -115,7 +115,7 @@ export default function OwnerDashboardScreen({ navigation }: Props) {
           </Pressable>
           <Pressable
             style={styles.avatar}
-            onPress={() => (navigation as any).navigate('OwnerProfile')}
+            onPress={() => (navigation as any).navigate('OwnerApp', { screen: 'Profil' })}
           >
             {profile?.avatar_url ? (
             <Image source={{ uri: profile.avatar_url }} style={styles.avatarImage} resizeMode="contain" />
@@ -303,17 +303,17 @@ const styles = StyleSheet.create({
     gap: spacing.sm,
   },
   bellBtn: {
-    width: 44,
-    height: 44,
-    borderRadius: 22,
+    width: 48,
+    height: 48,
+    borderRadius: 24,
     backgroundColor: colors.card,
     alignItems: 'center',
     justifyContent: 'center',
   },
   notifDot: {
     position: 'absolute',
-    top: 10,
-    right: 10,
+    top: 7,
+    right: 7,
     width: 8,
     height: 8,
     borderRadius: 4,

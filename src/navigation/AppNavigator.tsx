@@ -19,7 +19,6 @@ import OwnerReg4Screen from '../screens/owner/registration/OwnerReg4Screen';
 import OwnerReg5Screen from '../screens/owner/registration/OwnerReg5Screen';
 import OwnerVerificationScreen from '../screens/owner/OwnerVerificationScreen';
 import OwnerBusinessProfileScreen from '../screens/owner/OwnerBusinessProfileScreen';
-import OwnerProfileScreen from '../screens/owner/OwnerProfileScreen';
 import OwnerOrderDetailScreen from '../screens/owner/OwnerOrderDetailScreen';
 import OwnerVehicleDetailScreen from '../screens/owner/OwnerVehicleDetailScreen';
 import OwnerAvailabilityScreen from '../screens/owner/OwnerAvailabilityScreen';
@@ -77,7 +76,6 @@ export default function AppNavigator() {
         <Stack.Screen name="OwnerReg5" component={OwnerReg5Screen} />
         <Stack.Screen name="OwnerVerification" component={OwnerVerificationScreen} />
         <Stack.Screen name="OwnerBusinessProfile" component={OwnerBusinessProfileScreen} />
-        <Stack.Screen name="OwnerProfile" component={OwnerProfileScreen} />
         <Stack.Screen name="OwnerApp" component={OwnerTabs} />
         <Stack.Screen name="RenterApp" component={RenterTabs} />
         <Stack.Screen name="AdminApp" component={AdminDashboardScreen} />

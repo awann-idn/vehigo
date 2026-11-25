@@ -14,7 +14,6 @@ import {
 } from 'lucide-react-native';
 import { RootStackParamList } from '../../navigation/types';
 import { Screen } from '../../components/Screen';
-import { AppHeader } from '../../components/AppHeader';
 import { Card } from '../../components/Card';
 import { ListItem } from '../../components/ListItem';
 import { colors } from '../../theme/colors';
@@ -24,7 +23,7 @@ import { useOrders } from '../../hooks/useOrders';
 import { useVehicles } from '../../hooks/useVehicles';
 import { useMitraRating, useMyMitraProfile } from '../../hooks/useMitras';
 
-type Props = NativeStackScreenProps<RootStackParamList, 'OwnerProfile'>;
+type Props = NativeStackScreenProps<RootStackParamList, 'OwnerApp'>;
 
 export default function OwnerProfileScreen({ navigation }: Props) {
   const { user, profile, signOut } = useAuth();
@@ -40,7 +39,6 @@ export default function OwnerProfileScreen({ navigation }: Props) {
         : 'Menunggu verifikasi';
   return (
     <Screen scroll>
-      <AppHeader title="Akun Saya" onBack={() => navigation.goBack()} />
       <View style={styles.header}>
         <View style={styles.avatar}>
           {profile?.avatar_url ? (

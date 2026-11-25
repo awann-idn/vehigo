@@ -48,7 +48,7 @@ export type OwnerTabParamList = {
   Pesanan: undefined;
   Armada: undefined;
   Chat: undefined;
-  Alerts: undefined;
+  Profil: undefined;
 };
 
 export type RenterTabParamList = {

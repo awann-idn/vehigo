@@ -1,15 +1,13 @@
 import React from 'react';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
-import { Bell, Car, ClipboardList, LayoutDashboard, MessageCircle } from 'lucide-react-native';
+import { Car, ClipboardList, LayoutDashboard, MessageCircle, User } from 'lucide-react-native';
 import { OwnerTabParamList } from './types';
 import OwnerDashboardScreen from '../screens/owner/OwnerDashboardScreen';
 import OwnerOrdersScreen from '../screens/owner/OwnerOrdersScreen';
 import OwnerFleetScreen from '../screens/owner/OwnerFleetScreen';
-import OwnerAlertsScreen from '../screens/owner/OwnerAlertsScreen';
+import OwnerProfileScreen from '../screens/owner/OwnerProfileScreen';
 import ChatListScreen from '../screens/renter/ChatListScreen';
 import { colors } from '../theme/colors';
-import { useAuth } from '../features/auth/useAuth';
-import { useUnreadNotificationsCount } from '../hooks/useNotifications';
 
 const Tab = createBottomTabNavigator<OwnerTabParamList>();
 
@@ -18,13 +16,10 @@ const icons = {
   Pesanan: ClipboardList,
   Armada: Car,
   Chat: MessageCircle,
-  Alerts: Bell,
+  Profil: User,
 };
 
 export default function OwnerTabs() {
-  const { user } = useAuth();
-  const unreadCount = useUnreadNotificationsCount(user?.id);
-
   return (
     <Tab.Navigator
       screenOptions={({ route }) => ({
@@ -49,14 +44,7 @@ export default function OwnerTabs() {
       <Tab.Screen name="Pesanan" component={OwnerOrdersScreen as any} />
       <Tab.Screen name="Armada" component={OwnerFleetScreen as any} />
       <Tab.Screen name="Chat" component={ChatListScreen as any} />
-      <Tab.Screen
-        name="Alerts"
-        component={OwnerAlertsScreen as any}
-        options={{
-          tabBarBadge: unreadCount > 0 ? unreadCount : undefined,
-          tabBarBadgeStyle: { backgroundColor: colors.danger, fontSize: 10 },
-        }}
-      />
+      <Tab.Screen name="Profil" component={OwnerProfileScreen as any} />
     </Tab.Navigator>
   );
 }
