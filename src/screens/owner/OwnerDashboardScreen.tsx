@@ -272,10 +272,9 @@ function ChecklistRow({ completed, label, number }: { completed: boolean; label:
 const styles = StyleSheet.create({
   topBar: {
     flexDirection: 'row',
-    paddingTop: spacing.md,
     justifyContent: 'space-between',
     alignItems: 'flex-start',
-    paddingTop: spacing.sm,
+    paddingTop: spacing.md,
     paddingBottom: spacing.base,
   },
   greetingBlock: {
