@@ -211,3 +211,22 @@ export function subscribeToVehicles(onUpdate: () => void) {
     supabase.removeChannel(channel);
   };
 }
+
+export async function saveVehiclePhoto(payload: {
+  vehicleId: string;
+  ownerId: string;
+  angle: string;
+  storagePath: string;
+}) {
+  const { data, error } = await supabase.from('vehicle_photos').upsert(
+    {
+      vehicle_id: payload.vehicleId,
+      owner_id: payload.ownerId,
+      angle: payload.angle,
+      storage_path: payload.storagePath,
+    },
+    { onConflict: 'vehicle_id,angle' }
+  ).select().single();
+  if (error) throw new Error(error.message);
+  return data;
+}

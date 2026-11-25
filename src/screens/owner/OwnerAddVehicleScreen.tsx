@@ -12,6 +12,7 @@ import { colors } from '../../theme/colors';
 import { spacing } from '../../theme/spacing';
 import { typography } from '../../theme/typography';
 import { useCreateVehicle, useUpdateVehicle, useVehicle } from '../../hooks/useVehicles';
+import { saveVehiclePhoto } from '../../api/vehicles';
 import { useAuth } from '../../features/auth/useAuth';
 import { pickAndCompressImage, uploadDocument } from '../../lib/storage';
 
@@ -43,13 +44,14 @@ function VehicleForm({ userId, vehicleId, initial, onSaved }: VehicleFormProps) 
   const [pricePerDay, setPricePerDay] = useState(initial.pricePerDay);
   const [transmission, setTransmission] = useState(initial.transmission);
   const [loading, setLoading] = useState(false);
+  const [photos, setPhotos] = useState<Record<string, string>>({});
 
   const handlePickPhoto = async (angle: string) => {
     try {
       const uri = await pickAndCompressImage([4, 3]);
       if (uri) {
-        await uploadDocument(userId, 'vehicle', uri);
-        Alert.alert('Sukses', `Foto ${angle} berhasil diunggah.`);
+        setPhotos((current) => ({ ...current, [angle]: uri }));
+        Alert.alert('Foto dipilih', `Foto ${angle} akan disimpan bersama kendaraan.`);
       }
     } catch (err: any) {
       Alert.alert('Info', err.message);
@@ -71,10 +73,16 @@ function VehicleForm({ userId, vehicleId, initial, onSaved }: VehicleFormProps) 
         price_per_day: parseInt(pricePerDay, 10) || 350000,
         transmission,
       };
-      if (vehicleId) {
-        await updateVehicleMutation.mutateAsync({ id: vehicleId, ...payload });
-      } else {
-        await createVehicleMutation.mutateAsync({ mitra_id: userId, ...payload });
+      const savedVehicle = vehicleId
+        ? await updateVehicleMutation.mutateAsync({ id: vehicleId, ...payload })
+        : await createVehicleMutation.mutateAsync({ mitra_id: userId, ...payload });
+
+      const savedId = vehicleId ?? savedVehicle?.id;
+      if (savedId) {
+        for (const [angle, uri] of Object.entries(photos)) {
+          const upload = await uploadDocument(userId, 'vehicle', uri);
+          await saveVehiclePhoto({ vehicleId: savedId, ownerId: userId, angle, storagePath: upload.path });
+        }
       }
 
       Alert.alert('Sukses', isEdit ? 'Kendaraan berhasil diperbarui!' : 'Kendaraan berhasil ditambahkan!', [
