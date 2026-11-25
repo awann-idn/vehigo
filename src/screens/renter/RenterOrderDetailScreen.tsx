@@ -98,7 +98,9 @@ export default function RenterOrderDetailScreen({ navigation, route }: Props) {
           <>
             <PrimaryButton
               label={order.status === 'Menunggu Konfirmasi' ? 'Menunggu Konfirmasi Mitra' : 'Bayar Sekarang'}
+              disabled={order.status === 'Menunggu Konfirmasi'}
               onPress={() => {
+                if (order.status === 'Menunggu Konfirmasi') return;
                 navigation.navigate('BookingPayment', {
                   vehicleId: order.vehicleId ?? '',
                   orderId: order.id,
@@ -113,6 +115,19 @@ export default function RenterOrderDetailScreen({ navigation, route }: Props) {
               onPress={handleCancelOrder}
             />
           </>
+        ) : null}
+
+        {order.status === 'Denda' ? (
+          <PrimaryButton
+            label="Bayar Denda"
+            onPress={() =>
+              Alert.alert(
+                'Pembayaran denda',
+                'Pembayaran denda eksternal belum tersedia. Hubungi mitra untuk konfirmasi manual.',
+                [{ text: 'Tutup' }]
+              )
+            }
+          />
         ) : null}
 
         {order.status === 'Berlangsung' ? (
