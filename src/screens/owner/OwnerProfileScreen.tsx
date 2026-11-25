@@ -1,4 +1,5 @@
 import React from 'react';
+import { Image } from 'react-native';
 import { useAuth } from '../../features/auth/useAuth';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
@@ -43,7 +44,11 @@ export default function OwnerProfileScreen({ navigation }: Props) {
       <AppHeader title="Akun Saya" onBack={() => navigation.goBack()} />
       <View style={styles.header}>
         <View style={styles.avatar}>
-          <Text style={styles.avatarText}>{(profile?.full_name || user?.email || 'M').slice(0, 2).toUpperCase()}</Text>
+          {profile?.avatar_url ? (
+            <Image source={{ uri: profile.avatar_url }} style={styles.avatarImage} resizeMode="contain" />
+          ) : (
+            <Text style={styles.avatarText}>{(profile?.full_name || user?.email || 'M').slice(0, 2).toUpperCase()}</Text>
+          )}
         </View>
         <View style={styles.headerText}>
           <Text style={styles.name}>{profile?.full_name || user?.email?.split('@')[0] || 'Profil belum dilengkapi'}</Text>
@@ -115,6 +120,12 @@ const styles = StyleSheet.create({
     backgroundColor: colors.primary,
     alignItems: 'center',
     justifyContent: 'center',
+    overflow: 'hidden',
+  },
+  avatarImage: {
+    width: '100%',
+    height: '100%',
+    borderRadius: 999,
   },
   avatarText: {
     ...typography.h3,

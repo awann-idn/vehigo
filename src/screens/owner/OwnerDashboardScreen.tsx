@@ -1,4 +1,5 @@
 import React, { useMemo } from 'react';
+import { Image } from 'react-native';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import {
@@ -117,7 +118,11 @@ export default function OwnerDashboardScreen({ navigation }: Props) {
             style={styles.avatar}
             onPress={() => (navigation as any).navigate('OwnerProfile')}
           >
+            {profile?.avatar_url ? (
+            <Image source={{ uri: profile.avatar_url }} style={styles.avatarImage} resizeMode="contain" />
+          ) : (
             <Text style={styles.avatarText}>{(profile?.full_name || user?.email || 'M').slice(0, 2).toUpperCase()}</Text>
+          )}
           </Pressable>
         </View>
       </View>
@@ -322,6 +327,12 @@ const styles = StyleSheet.create({
     backgroundColor: colors.primary,
     alignItems: 'center',
     justifyContent: 'center',
+    overflow: 'hidden',
+  },
+  avatarImage: {
+    width: '100%',
+    height: '100%',
+    borderRadius: 999,
   },
   avatarText: {
     ...typography.bodySm,
