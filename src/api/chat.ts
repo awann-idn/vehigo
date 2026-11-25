@@ -77,6 +77,7 @@ export async function fetchChatMessages(
       text: m.body,
       time: formatTime(m.created_at),
       read: !!m.read_at,
+      kind: m.kind,
     }));
   } catch (error) {
     throw error instanceof Error ? error : new Error('Gagal memuat pesan');
@@ -127,7 +128,7 @@ export async function markChatRead(chatId: string): Promise<void> {
   if (error) throw new Error(error.message);
 }
 
-export async function sendChatMessage(chatId: string, senderId: string, body: string, kind: 'text' | 'emergency' = 'text') {
+export async function sendChatMessage(chatId: string, senderId: string, body: string, kind: 'text' | 'emergency' | 'image' | 'order' = 'text') {
   const { data, error } = await supabase
     .from('messages')
     .insert([

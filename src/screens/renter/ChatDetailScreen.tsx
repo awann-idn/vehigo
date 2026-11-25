@@ -11,10 +11,11 @@ import {
   Text,
   TextInput,
   View,
+  Modal,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
-import { AlertTriangle, Check, CheckCheck, Send } from 'lucide-react-native';
+import { AlertTriangle, Camera, Check, CheckCheck, Image as ImageIcon, Paperclip, Send, ShoppingBag, X } from 'lucide-react-native';
 import { RootStackParamList } from '../../navigation/types';
 import { AppHeader } from '../../components/AppHeader';
 import { colors } from '../../theme/colors';
@@ -22,6 +23,8 @@ import { spacing } from '../../theme/spacing';
 import { typography } from '../../theme/typography';
 import { useAuth } from '../../features/auth/useAuth';
 import { useChatMessages, useChatThread, useSendMessage } from '../../hooks/useChat';
+import { pickAndCompressImage, uploadDocument } from '../../lib/storage';
+import { useOrder } from '../../hooks/useOrders';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'ChatDetail'>;
 
@@ -33,6 +36,9 @@ export default function ChatDetailScreen({ navigation, route }: Props) {
   const messages = data ?? [];
   const [draft, setDraft] = useState('');
   const [emergency] = useState(false);
+  const [attachOpen, setAttachOpen] = useState(false);
+  const [uploadingAttachment, setUploadingAttachment] = useState(false);
+  const { data: order } = useOrder(thread?.orderId ?? '');
   const scrollViewRef = useRef<any>(null);
 
   const handleEmergencyCall = useCallback(async () => {
@@ -77,6 +83,49 @@ export default function ChatDetailScreen({ navigation, route }: Props) {
       }),
     [handleEmergencyCall]
   );
+
+  const sendImage = async () => {
+    if (!user) {
+      Alert.alert('Login diperlukan', 'Silakan login untuk mengirim lampiran.');
+      return;
+    }
+    try {
+      setAttachOpen(false);
+      const uri = await pickAndCompressImage([4, 3]);
+      if (!uri) return;
+      setUploadingAttachment(true);
+      const upload = await uploadDocument(user.id, 'vehicle', uri);
+      await sendMessage.mutateAsync({
+        chatId: route.params.id,
+        senderId: user.id,
+        body: `Lampiran gambar: ${upload.path}`,
+        kind: 'image',
+      });
+      Alert.alert('Terkirim', `Lampiran gambar tercatat dengan path ${upload.path}.`);
+    } catch (error) {
+      Alert.alert('Gagal mengirim lampiran', error instanceof Error ? error.message : 'Coba lagi.');
+    } finally {
+      setUploadingAttachment(false);
+    }
+  };
+
+  const sendOrderCard = async () => {
+    if (!user || !order) {
+      Alert.alert('Pesanan tidak tersedia', 'Buka chat dari halaman detail pesanan untuk mengirim kartu pesanan.');
+      return;
+    }
+    try {
+      setAttachOpen(false);
+      await sendMessage.mutateAsync({
+        chatId: route.params.id,
+        senderId: user.id,
+        body: `Pesanan ${order.code} • ${order.vehicle} • ${order.start} – ${order.end}`,
+        kind: 'order',
+      });
+    } catch (error) {
+      Alert.alert('Gagal mengirim pesanan', error instanceof Error ? error.message : 'Coba lagi.');
+    }
+  };
 
   const send = async () => {
     const text = draft.trim();
@@ -159,6 +208,9 @@ export default function ChatDetailScreen({ navigation, route }: Props) {
         </ScrollView>
 
         <View style={styles.inputBar}>
+          <Pressable style={styles.attach} onPress={() => setAttachOpen(true)} disabled={uploadingAttachment}>
+            <Paperclip size={18} color={colors.primary} />
+          </Pressable>
           <TextInput
             style={styles.input}
             placeholder="Tulis pesan..."
@@ -172,6 +224,33 @@ export default function ChatDetailScreen({ navigation, route }: Props) {
           </Pressable>
         </View>
       </KeyboardAvoidingView>
+
+      <Modal visible={attachOpen} transparent animationType="slide" onRequestClose={() => setAttachOpen(false)}>
+        <View style={styles.sheetBackdrop}>
+          <View style={styles.sheet}>
+            <View style={styles.sheetHeader}>
+              <Text style={styles.sheetTitle}>Kirim Lampiran</Text>
+              <Pressable onPress={() => setAttachOpen(false)} hitSlop={10}>
+                <X size={20} color={colors.text.primary} />
+              </Pressable>
+            </View>
+            <View style={styles.sheetOptions}>
+              <Pressable style={styles.sheetOption} onPress={sendImage}>
+                <View style={styles.sheetIcon}><ImageIcon size={22} color={colors.primary} /></View>
+                <Text style={styles.sheetLabel}>GAMBAR</Text>
+              </Pressable>
+              <Pressable style={styles.sheetOption} onPress={sendImage}>
+                <View style={styles.sheetIcon}><Camera size={22} color={colors.primary} /></View>
+                <Text style={styles.sheetLabel}>KAMERA</Text>
+              </Pressable>
+              <Pressable style={styles.sheetOption} onPress={sendOrderCard}>
+                <View style={styles.sheetIcon}><ShoppingBag size={22} color={colors.primary} /></View>
+                <Text style={styles.sheetLabel}>PESANAN</Text>
+              </Pressable>
+            </View>
+          </View>
+        </View>
+      </Modal>
     </SafeAreaView>
   );
 }
@@ -243,6 +322,39 @@ const styles = StyleSheet.create({
   timeMe: {
     color: 'rgba(255,255,255,0.7)',
   },
+  attach: {
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    backgroundColor: colors.card,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  sheetBackdrop: {
+    flex: 1,
+    backgroundColor: 'rgba(26,33,56,0.4)',
+    justifyContent: 'flex-end',
+  },
+  sheet: {
+    backgroundColor: colors.background,
+    borderTopLeftRadius: 32,
+    borderTopRightRadius: 32,
+    padding: spacing.lg,
+    gap: spacing.lg,
+  },
+  sheetHeader: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
+  sheetTitle: { ...typography.h3 },
+  sheetOptions: { flexDirection: 'row', justifyContent: 'space-around' },
+  sheetOption: { alignItems: 'center', gap: spacing.sm },
+  sheetIcon: {
+    width: 64,
+    height: 64,
+    borderRadius: 20,
+    backgroundColor: colors.card,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  sheetLabel: { ...typography.caption, fontFamily: 'Manrope_800ExtraBold', color: colors.text.primary },
   inputBar: {
     flexDirection: 'row',
     alignItems: 'flex-end',

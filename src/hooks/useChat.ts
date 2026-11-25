@@ -77,7 +77,7 @@ export function useSendMessage() {
       chatId: string;
       senderId: string;
       body: string;
-      kind?: 'text' | 'emergency';
+      kind?: 'text' | 'emergency' | 'image' | 'order';
     }) => sendChatMessage(chatId, senderId, body, kind),
     onMutate: async ({ chatId, body }) => {
       await queryClient.cancelQueries({ queryKey: ['chatMessages', chatId] });

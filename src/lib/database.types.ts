@@ -365,7 +365,7 @@ export interface Database {
           chat_id: string;
           sender_id: string;
           body: string;
-          kind: 'text' | 'emergency';
+          kind: 'text' | 'emergency' | 'image' | 'order';
           read_at: string | null;
           created_at: string;
         };
@@ -374,7 +374,7 @@ export interface Database {
           chat_id: string;
           sender_id: string;
           body: string;
-          kind?: 'text' | 'emergency';
+          kind?: 'text' | 'emergency' | 'image' | 'order';
           read_at?: string | null;
           created_at?: string;
         };
