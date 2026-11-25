@@ -48,6 +48,8 @@ export default function OwnerReg5Screen({ navigation }: Props) {
         phone: registration.phone,
         payoutMethod: method,
         accountNumber: account,
+        operatingHours: registration.operatingHours,
+        terms: registration.terms,
         accountHolder,
       });
       await refreshProfile();

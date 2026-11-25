@@ -53,6 +53,8 @@ export type MyPayoutAccount = {
   method: 'bank' | 'ewallet';
   accountNumber: string;
   accountHolder: string;
+  operatingHours?: { dayOfWeek: number; isOpen: boolean; openTime: string; closeTime: string }[];
+  terms?: { title: string; body: string }[];
 };
 
 export async function fetchMyPayoutAccount(userId: string): Promise<MyPayoutAccount | null> {
@@ -82,6 +84,8 @@ export interface SaveMitraRegistrationPayload {
   payoutMethod: 'bank' | 'ewallet';
   accountNumber: string;
   accountHolder: string;
+  operatingHours?: { dayOfWeek: number; isOpen: boolean; openTime: string; closeTime: string }[];
+  terms?: { title: string; body: string }[];
 }
 
 export async function saveMitraRegistration(payload: SaveMitraRegistrationPayload): Promise<void> {
@@ -110,6 +114,28 @@ export async function saveMitraRegistration(payload: SaveMitraRegistrationPayloa
     { onConflict: 'user_id' }
   );
   if (mitraUpsert.error) throw new Error(mitraUpsert.error.message);
+
+  if (payload.operatingHours) {
+    const hoursClient = supabase as any;
+    const hours = await hoursClient.from('mitra_operating_hours').upsert(
+      payload.operatingHours.map((hour) => ({
+        mitra_id: payload.userId,
+        day_of_week: hour.dayOfWeek,
+        is_open: hour.isOpen,
+        open_time: hour.openTime,
+        close_time: hour.closeTime,
+      })),
+      { onConflict: 'mitra_id,day_of_week' }
+    );
+    if (hours.error) throw new Error(hours.error.message);
+  }
+  if (payload.terms) {
+    const terms = await (supabase as any).from('mitra_terms').upsert(
+      { mitra_id: payload.userId, terms: payload.terms },
+      { onConflict: 'mitra_id' }
+    );
+    if (terms.error) throw new Error(terms.error.message);
+  }
 
   if (payload.accountNumber.trim()) {
     const client = supabase as any;

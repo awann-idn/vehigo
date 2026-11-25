@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Modal, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { Modal, Pressable, ScrollView, StyleSheet, Switch, Text, TextInput, View } from 'react-native';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { LocateFixed, MapPin, X } from 'lucide-react-native';
 import { RootStackParamList } from '../../../navigation/types';
@@ -12,15 +12,12 @@ import { useRegistrationStore } from '../../../features/owner/registrationStore'
 
 type Props = NativeStackScreenProps<RootStackParamList, 'OwnerReg3'>;
 
-const terms = [
-  'Ketentuan penyewa: usia minimal, SIM, dan identitas yang diperlukan.',
-  'Durasi & keterlambatan: sistem durasi sewa dan denda keterlambatan.',
-  'Penggunaan kendaraan: aturan pemakaian dan larangan.',
-  'Pengembalian & bahan bakar: kondisi unit saat dikembalikan.',
-];
+
 
 export default function OwnerReg3Screen({ navigation }: Props) {
   const address = useRegistrationStore((state) => state.address);
+  const operatingHours = useRegistrationStore((state) => state.operatingHours);
+  const terms = useRegistrationStore((state) => state.terms);
   const updateRegistration = useRegistrationStore((state) => state.update);
   const [termsVisible, setTermsVisible] = useState(false);
 
@@ -30,7 +27,13 @@ export default function OwnerReg3Screen({ navigation }: Props) {
       heading="Informasi Usaha"
       subheading="Lengkapi form informasi di bawah ini dengan jelas agar dapat meningkatkan transparansi kepada penyewa."
       onBack={() => navigation.goBack()}
-      onNext={() => navigation.navigate('OwnerReg4')}
+      onNext={() => {
+        if (!address.trim()) {
+          alert('Alamat usaha wajib diisi.');
+          return;
+        }
+        navigation.navigate('OwnerReg4');
+      }}
     >
       <TextField
         label="Alamat Lengkap Usaha"
@@ -49,6 +52,17 @@ export default function OwnerReg3Screen({ navigation }: Props) {
           <LocateFixed size={14} color={colors.primary} />
           <Text style={styles.locateText}>GUNAKAN LOKASI SAAT INI</Text>
         </Pressable>
+      </View>
+
+      <Text style={styles.label}>JAM OPERASIONAL</Text>
+      <View style={styles.hoursList}>
+        {operatingHours.map((hour) => (
+          <View key={hour.dayOfWeek} style={styles.hourRow}>
+            <Text style={styles.hourLabel}>{['Minggu', 'Senin', 'Selasa', 'Rabu', 'Kamis', 'Jumat', 'Sabtu'][hour.dayOfWeek]}</Text>
+            <Switch value={hour.isOpen} onValueChange={(value) => updateRegistration({ operatingHours: operatingHours.map((item) => item.dayOfWeek === hour.dayOfWeek ? { ...item, isOpen: value } : item) })} />
+            <Text style={styles.hourText}>{hour.isOpen ? `${hour.openTime} - ${hour.closeTime}` : 'CLOSED'}</Text>
+          </View>
+        ))}
       </View>
 
       <Pressable style={styles.termsButton} onPress={() => setTermsVisible(true)}>
@@ -70,9 +84,18 @@ export default function OwnerReg3Screen({ navigation }: Props) {
             </Text>
             <ScrollView style={styles.modalBody}>
               {terms.map((item, index) => (
-                <View key={item} style={styles.termRow}>
+                <View key={item.title} style={styles.termRow}>
                   <Text style={styles.termIndex}>{index + 1}.</Text>
-                  <Text style={styles.termText}>{item}</Text>
+                  <View style={styles.termInputWrap}>
+                    <Text style={styles.termTitle}>{item.title}</Text>
+                    <TextInput
+                      style={styles.termInput}
+                      placeholder="Jelaskan ketentuan ini"
+                      value={item.body}
+                      onChangeText={(body) => updateRegistration({ terms: terms.map((term, termIndex) => termIndex === index ? { ...term, body } : term) })}
+                      multiline
+                    />
+                  </View>
                 </View>
               ))}
             </ScrollView>
@@ -126,6 +149,13 @@ const styles = StyleSheet.create({
     fontWeight: '700',
     color: colors.primary,
   },
+  hoursList: { gap: spacing.sm },
+  hourRow: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm, padding: spacing.sm, borderRadius: 10, backgroundColor: colors.surface },
+  hourLabel: { ...typography.bodySm, width: 62, fontWeight: '700' },
+  hourText: { ...typography.caption, color: colors.text.muted, flex: 1, textAlign: 'right' },
+  termInputWrap: { flex: 1, gap: 4 },
+  termTitle: { ...typography.caption, fontWeight: '700', color: colors.primary },
+  termInput: { minHeight: 48, borderWidth: 1, borderColor: colors.border, borderRadius: 8, padding: spacing.sm, ...typography.caption, color: colors.text.primary },
   termsButton: {
     alignItems: 'center',
     paddingVertical: spacing.md,
