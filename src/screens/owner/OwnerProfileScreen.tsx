@@ -80,7 +80,7 @@ export default function OwnerProfileScreen({ navigation }: Props) {
 
       <View style={styles.section}>
         <Text style={styles.sectionTitle}>Preferensi</Text>
-        <ListItem icon={Bell} title="Notifikasi" subtitle="Pesanan & pengingat" onPress={() => (navigation as any).navigate('OwnerApp', { screen: 'Alerts' })} />
+        <ListItem icon={Bell} title="Notifikasi" subtitle="Pesanan & pengingat" onPress={() => navigation.navigate('OwnerAlerts')} />
         <ListItem icon={Settings} title="Pengaturan Aplikasi" onPress={() => navigation.navigate('AppSettings')} />
         <ListItem icon={HelpCircle} title="Pusat Bantuan" onPress={() => navigation.navigate('HelpCenter')} />
       </View>

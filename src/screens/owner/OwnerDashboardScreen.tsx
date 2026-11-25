@@ -108,7 +108,7 @@ export default function OwnerDashboardScreen({ navigation }: Props) {
         <View style={styles.topRight}>
           <Pressable
             style={styles.bellBtn}
-            onPress={() => (navigation as any).navigate('OwnerApp', { screen: 'Alerts' })}
+            onPress={() => navigation.navigate('OwnerAlerts')}
           >
             <Bell size={20} color={colors.primary} />
             {unreadNotifs > 0 ? <View style={styles.notifDot} /> : null}
@@ -249,7 +249,7 @@ export default function OwnerDashboardScreen({ navigation }: Props) {
 
       <Pressable
         style={styles.alertsLink}
-        onPress={() => (navigation as any).navigate('OwnerApp', { screen: 'Alerts' })}
+        onPress={() => navigation.navigate('OwnerAlerts')}
       >
         <Bell size={16} color={colors.primary} />
         <Text style={styles.alertsLinkText}>Buka pusat notifikasi</Text>

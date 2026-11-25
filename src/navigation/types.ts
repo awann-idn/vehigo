@@ -15,6 +15,7 @@ export type RootStackParamList = {
   OwnerVerification: undefined;
   OwnerBusinessProfile: undefined;
   OwnerProfile: undefined;
+  OwnerAlerts: undefined;
   OwnerApp: undefined;
   RenterApp: undefined;
   AdminApp: undefined;
