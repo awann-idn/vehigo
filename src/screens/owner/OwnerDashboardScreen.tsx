@@ -115,7 +115,7 @@ export default function OwnerDashboardScreen({ navigation }: Props) {
           </Pressable>
           <Pressable
             style={styles.avatar}
-            onPress={() => (navigation as any).navigate('OwnerBusinessProfile')}
+            onPress={() => (navigation as any).navigate('OwnerProfile')}
           >
             <Text style={styles.avatarText}>{(profile?.full_name || user?.email || 'M').slice(0, 2).toUpperCase()}</Text>
           </Pressable>

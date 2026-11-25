@@ -14,6 +14,7 @@ import {
 } from 'lucide-react-native';
 import { RootStackParamList } from '../../navigation/types';
 import { Screen } from '../../components/Screen';
+import { AppHeader } from '../../components/AppHeader';
 import { Card } from '../../components/Card';
 import { ListItem } from '../../components/ListItem';
 import { colors } from '../../theme/colors';
@@ -23,7 +24,7 @@ import { useOrders } from '../../hooks/useOrders';
 import { useVehicles } from '../../hooks/useVehicles';
 import { useMitraRating, useMyMitraProfile } from '../../hooks/useMitras';
 
-type Props = NativeStackScreenProps<RootStackParamList, 'OwnerApp'>;
+type Props = NativeStackScreenProps<RootStackParamList, 'OwnerProfile'>;
 
 export default function OwnerProfileScreen({ navigation }: Props) {
   const { user, profile, signOut } = useAuth();
@@ -39,6 +40,7 @@ export default function OwnerProfileScreen({ navigation }: Props) {
         : 'Menunggu verifikasi';
   return (
     <Screen scroll>
+      <AppHeader title="Akun Saya" onBack={() => navigation.goBack()} />
       <View style={styles.header}>
         <View style={styles.avatar}>
           <Text style={styles.avatarText}>{(profile?.full_name || user?.email || 'M').slice(0, 2).toUpperCase()}</Text>
@@ -76,7 +78,7 @@ export default function OwnerProfileScreen({ navigation }: Props) {
 
       <View style={styles.section}>
         <Text style={styles.sectionTitle}>Preferensi</Text>
-        <ListItem icon={Bell} title="Notifikasi" subtitle="Pesanan & pengingat" onPress={() => navigation.navigate('Alerts' as never)} />
+        <ListItem icon={Bell} title="Notifikasi" subtitle="Pesanan & pengingat" onPress={() => (navigation as any).navigate('OwnerApp', { screen: 'Alerts' })} />
         <ListItem icon={Settings} title="Pengaturan Aplikasi" onPress={() => navigation.navigate('AppSettings')} />
         <ListItem icon={HelpCircle} title="Pusat Bantuan" onPress={() => navigation.navigate('HelpCenter')} />
       </View>
