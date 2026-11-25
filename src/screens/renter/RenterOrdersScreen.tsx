@@ -17,12 +17,13 @@ import { useOrders } from '../../hooks/useOrders';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'RenterApp'>;
 
-const tabs = ['Semua', 'Menunggu', 'Aktif', 'Selesai', 'Dibatalkan'];
+const tabs = ['Semua', 'Belum Bayar', 'Berlangsung', 'Selesai', 'Denda', 'Dibatalkan'];
 
 const tabStatuses: Record<string, string[]> = {
-  Menunggu: ['Belum Bayar', 'Menunggu Konfirmasi'],
-  Aktif: ['Berlangsung'],
-  Selesai: ['Selesai', 'Denda'],
+  'Belum Bayar': ['Belum Bayar', 'Menunggu Konfirmasi'],
+  Berlangsung: ['Berlangsung'],
+  Selesai: ['Selesai'],
+  Denda: ['Denda'],
   Dibatalkan: ['Dibatalkan'],
 };
 
