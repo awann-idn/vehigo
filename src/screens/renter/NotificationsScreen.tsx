@@ -1,4 +1,4 @@
-import React, { useCallback } from 'react';
+import React, { useCallback, useMemo } from 'react';
 import { ActivityIndicator, Pressable, StyleSheet, Text, View } from 'react-native';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { useFocusEffect } from '@react-navigation/native';
@@ -35,6 +35,17 @@ export default function NotificationsScreen({ navigation }: Props) {
   const markLink = useMarkLinkRead();
 
   const unreadCount = notifications.filter((n) => !n.read).length;
+
+  const grouped = useMemo(() => {
+    const now = new Date();
+    const today = now.toDateString();
+    const yesterday = new Date(now.getTime() - 86400000).toDateString();
+    return [
+      { title: 'HARI INI', items: notifications.filter((item) => item.createdAt && new Date(item.createdAt).toDateString() === today) },
+      { title: 'KEMARIN', items: notifications.filter((item) => item.createdAt && new Date(item.createdAt).toDateString() === yesterday) },
+      { title: 'LAINNYA', items: notifications.filter((item) => !item.createdAt || ![today, yesterday].includes(new Date(item.createdAt).toDateString())) },
+    ].filter((group) => group.items.length > 0);
+  }, [notifications]);
 
   const queryClient = useQueryClient();
 
@@ -105,7 +116,7 @@ export default function NotificationsScreen({ navigation }: Props) {
           message="Informasi pesanan dan pemberitahuan aktivitas rental akan tampil di sini."
         />
       ) : (
-        notifications.map((item) => {
+        grouped.flatMap((group) => group.items).map((item) => {
           const Icon = toneIcon[item.tone];
           return (
             <Pressable

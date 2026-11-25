@@ -1,4 +1,4 @@
-import React, { useCallback } from 'react';
+import React, { useCallback, useMemo } from 'react';
 import { ActivityIndicator, Pressable, StyleSheet, Text, View } from 'react-native';
 import { AlertTriangle, BellRing, CheckCheck, CheckCircle2 } from 'lucide-react-native';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
@@ -35,6 +35,17 @@ export default function OwnerAlertsScreen({ navigation }: Props) {
   const markLink = useMarkLinkRead();
 
   const unreadCount = ownerNotifications.filter((n) => !n.read).length;
+
+  const grouped = useMemo(() => {
+    const now = new Date();
+    const today = now.toDateString();
+    const yesterday = new Date(now.getTime() - 86400000).toDateString();
+    return [
+      { title: 'HARI INI', items: ownerNotifications.filter((item) => item.createdAt && new Date(item.createdAt).toDateString() === today) },
+      { title: 'KEMARIN', items: ownerNotifications.filter((item) => item.createdAt && new Date(item.createdAt).toDateString() === yesterday) },
+      { title: 'LAINNYA', items: ownerNotifications.filter((item) => !item.createdAt || ![today, yesterday].includes(new Date(item.createdAt).toDateString())) },
+    ].filter((group) => group.items.length > 0);
+  }, [ownerNotifications]);
 
   const queryClient = useQueryClient();
 
@@ -105,7 +116,7 @@ export default function OwnerAlertsScreen({ navigation }: Props) {
         />
       ) : (
         <View style={styles.list}>
-          {ownerNotifications.map((item) => {
+          {grouped.flatMap((group) => group.items).map((item) => {
             const Icon = toneIcon[item.tone];
             return (
               <Pressable

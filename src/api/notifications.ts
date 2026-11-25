@@ -33,6 +33,7 @@ export async function fetchNotifications(userId?: string): Promise<NotificationI
       linkType: n.link_type === 'chat' || n.link_type === 'order' ? n.link_type : null,
       linkId: n.link_id ?? null,
       category: n.category === 'chat' || n.category === 'promo' ? n.category : 'order',
+      createdAt: n.created_at,
     }));
   } catch (error) {
     throw error instanceof Error ? error : new Error('Gagal memuat notifikasi');
