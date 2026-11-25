@@ -14,7 +14,6 @@ import { typography } from '../../theme/typography';
 import { useAuth } from '../../features/auth/useAuth';
 import { pickAndCompressImage, uploadDocument } from '../../lib/storage';
 import { saveInspection } from '../../api/inspections';
-import { updateOrderStatus } from '../../api/orders';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'Inspection'>;
 
@@ -62,10 +61,6 @@ export default function InspectionScreen({ navigation, route }: Props) {
           approved,
         });
 
-        // Tandai order menjadi selesai setelah inspeksi akhir diajukan
-        await updateOrderStatus(route.params.id, 'selesai').catch((e) => {
-          console.warn('Update order status notice:', e);
-        });
       } else {
         throw new Error('Anda harus login untuk menyimpan inspeksi');
       }
@@ -75,7 +70,11 @@ export default function InspectionScreen({ navigation, route }: Props) {
     } finally {
       setUploading(false);
     }
-    navigation.replace('Rating', { id: route.params.id });
+    Alert.alert(
+      'Pengecekan terkirim',
+      'Mitra akan meninjau hasil pengecekan sebelum menyelesaikan pesanan. Anda dapat memberi rating setelah pesanan selesai.',
+      [{ text: 'Lihat Pesanan', onPress: () => navigation.replace('RenterOrderDetail', { id: route.params.id }) }]
+    );
   };
 
   return (
