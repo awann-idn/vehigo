@@ -1,6 +1,5 @@
 import React, { useMemo } from 'react';
-import { Image } from 'react-native';
-import { Pressable, StyleSheet, Text, View } from 'react-native';
+import { Image, Pressable, StyleSheet, Text, View } from 'react-native';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import {
   BarChart3,
