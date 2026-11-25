@@ -41,7 +41,9 @@ export default function OwnerReg5Screen({ navigation }: Props) {
       await saveRegistration.mutateAsync({
         userId: user.id,
         ownerName: registration.ownerName,
+        identityNumber: registration.identityNumber,
         businessName: registration.businessName,
+        businessDescription: registration.businessDescription,
         address: registration.address,
         phone: registration.phone,
         payoutMethod: method,

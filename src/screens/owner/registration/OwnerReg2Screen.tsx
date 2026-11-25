@@ -16,6 +16,7 @@ type Props = NativeStackScreenProps<RootStackParamList, 'OwnerReg2'>;
 
 export default function OwnerReg2Screen({ navigation }: Props) {
   const businessName = useRegistrationStore((state) => state.businessName);
+  const businessDescription = useRegistrationStore((state) => state.businessDescription);
   const nib = useRegistrationStore((state) => state.nib);
   const npwp = useRegistrationStore((state) => state.npwp);
   const updateRegistration = useRegistrationStore((state) => state.update);
@@ -53,13 +54,27 @@ export default function OwnerReg2Screen({ navigation }: Props) {
       heading="Legalitas Usaha"
       subheading="Pastikan data yang Anda masukkan sesuai dengan dokumen resmi untuk mempercepat proses verifikasi."
       onBack={() => navigation.goBack()}
-      onNext={() => navigation.navigate('OwnerReg3')}
+      onNext={() => {
+        if (!businessName.trim() || !businessDescription.trim() || !uploaded) {
+          Alert.alert('Data belum lengkap', 'Isi nama/deskripsi usaha dan unggah dokumen legalitas sebelum lanjut.');
+          return;
+        }
+        navigation.navigate('OwnerReg3');
+      }}
     >
       <TextField
         label="Nama Usaha"
         placeholder="Contoh: Sriwijaya Rent"
         value={businessName}
         onChangeText={(value) => updateRegistration({ businessName: value })}
+      />
+      <TextField
+        label="Deskripsi Usaha"
+        placeholder="Jelaskan layanan rental Anda"
+        multiline
+        value={businessDescription}
+        onChangeText={(value) => updateRegistration({ businessDescription: value })}
+        style={styles.description}
       />
       <TextField
         label="Nomor Induk Berusaha (NIB)"
@@ -115,6 +130,7 @@ export default function OwnerReg2Screen({ navigation }: Props) {
 }
 
 const styles = StyleSheet.create({
+  description: { minHeight: 96, textAlignVertical: 'top' },
   upload: {
     alignItems: 'center',
     gap: spacing.sm,

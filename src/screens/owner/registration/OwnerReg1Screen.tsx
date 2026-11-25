@@ -17,7 +17,7 @@ type Props = NativeStackScreenProps<RootStackParamList, 'OwnerReg1'>;
 export default function OwnerReg1Screen({ navigation }: Props) {
   const ownerName = useRegistrationStore((state) => state.ownerName);
   const updateRegistration = useRegistrationStore((state) => state.update);
-  const [nik, setNik] = useState('');
+  const identityNumber = useRegistrationStore((state) => state.identityNumber);
   const [imageUri, setImageUri] = useState<string | null>(null);
   const [uploading, setUploading] = useState(false);
   const [uploaded, setUploaded] = useState(false);
@@ -53,7 +53,13 @@ export default function OwnerReg1Screen({ navigation }: Props) {
       heading="Identitas Pemilik"
       subheading="Mari mulai dengan memverifikasi identitas legal Anda. Ini menjamin ekosistem yang aman bagi semua pengguna."
       onBack={() => navigation.goBack()}
-      onNext={() => navigation.navigate('OwnerReg2')}
+      onNext={() => {
+        if (!ownerName.trim() || identityNumber.length !== 16 || !uploaded) {
+          Alert.alert('Data belum lengkap', 'Isi nama, NIK 16 digit, dan unggah foto KTP sebelum lanjut.');
+          return;
+        }
+        navigation.navigate('OwnerReg2');
+      }}
     >
       <TextField
         label="Nama Lengkap (Sesuai KTP)"
@@ -66,8 +72,8 @@ export default function OwnerReg1Screen({ navigation }: Props) {
         placeholder="3275 0000 0000 0000"
         keyboardType="number-pad"
         maxLength={16}
-        value={nik}
-        onChangeText={setNik}
+        value={identityNumber}
+        onChangeText={(value) => updateRegistration({ identityNumber: value.replace(/\D/g, '') })}
       />
 
       <Pressable

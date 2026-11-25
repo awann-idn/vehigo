@@ -95,6 +95,8 @@ export interface Database {
           id: string;
           user_id: string;
           business_name: string;
+          owner_identity_number: string | null;
+          business_description: string | null;
           address: string | null;
           latitude: number | null;
           longitude: number | null;
@@ -106,6 +108,8 @@ export interface Database {
           id?: string;
           user_id: string;
           business_name: string;
+          owner_identity_number?: string | null;
+          business_description?: string | null;
           address?: string | null;
           latitude?: number | null;
           longitude?: number | null;
@@ -117,6 +121,8 @@ export interface Database {
           id?: string;
           user_id?: string;
           business_name?: string;
+          owner_identity_number?: string | null;
+          business_description?: string | null;
           address?: string | null;
           latitude?: number | null;
           longitude?: number | null;

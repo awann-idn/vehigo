@@ -4,7 +4,9 @@ export type PayoutMethod = 'bank' | 'ewallet';
 
 export interface RegistrationData {
   ownerName: string;
+  identityNumber: string;
   businessName: string;
+  businessDescription: string;
   nib: string;
   npwp: string;
   address: string;
@@ -17,7 +19,9 @@ export interface RegistrationData {
 
 const initial: RegistrationData = {
   ownerName: '',
+  identityNumber: '',
   businessName: '',
+  businessDescription: '',
   nib: '',
   npwp: '',
   address: '',

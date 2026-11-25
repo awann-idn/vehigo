@@ -74,7 +74,9 @@ export async function fetchMyPayoutAccount(userId: string): Promise<MyPayoutAcco
 export interface SaveMitraRegistrationPayload {
   userId: string;
   ownerName: string;
+  identityNumber?: string;
   businessName: string;
+  businessDescription?: string;
   address: string;
   phone: string;
   payoutMethod: 'bank' | 'ewallet';
@@ -101,6 +103,8 @@ export async function saveMitraRegistration(payload: SaveMitraRegistrationPayloa
     {
       user_id: payload.userId,
       business_name: payload.businessName.trim(),
+      owner_identity_number: payload.identityNumber?.trim() || null,
+      business_description: payload.businessDescription?.trim() || null,
       address: payload.address.trim() || null,
     },
     { onConflict: 'user_id' }
