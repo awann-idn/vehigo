@@ -1,10 +1,11 @@
-import React from 'react';
+import React, { useMemo, useState } from 'react';
 import { ActivityIndicator, Pressable, StyleSheet, Text, View } from 'react-native';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
-import { MessageCircle } from 'lucide-react-native';
+import { MessageCircle, Search } from 'lucide-react-native';
 import { RootStackParamList } from '../../navigation/types';
 import { Screen } from '../../components/Screen';
 import { EmptyState } from '../../components/EmptyState';
+import { TextField } from '../../components/TextField';
 import { colors } from '../../theme/colors';
 import { spacing } from '../../theme/spacing';
 import { typography } from '../../theme/typography';
@@ -16,6 +17,11 @@ type Props = NativeStackScreenProps<RootStackParamList, 'RenterApp'>;
 export default function ChatListScreen({ navigation }: Props) {
   const { user } = useAuth();
   const { data: chatThreads = [], isLoading } = useChatThreads(user?.id);
+  const [query, setQuery] = useState('');
+  const filteredThreads = useMemo(
+    () => chatThreads.filter((thread) => `${thread.name} ${thread.lastMessage}`.toLowerCase().includes(query.toLowerCase())),
+    [chatThreads, query]
+  );
 
   return (
     <Screen scroll>
@@ -24,9 +30,16 @@ export default function ChatListScreen({ navigation }: Props) {
         <Text style={styles.subtitle}>Obrolan Anda dengan mitra</Text>
       </View>
 
+      <TextField
+        icon={Search}
+        placeholder="Cari obrolan anda..."
+        value={query}
+        onChangeText={setQuery}
+      />
+
       {isLoading ? (
         <ActivityIndicator size="large" color={colors.primary} style={{ marginTop: spacing.xl }} />
-      ) : chatThreads.length === 0 ? (
+      ) : filteredThreads.length === 0 ? (
         <EmptyState
           icon={MessageCircle}
           title="Belum ada pesan"
@@ -34,7 +47,7 @@ export default function ChatListScreen({ navigation }: Props) {
         />
       ) : (
         <View style={styles.list}>
-          {chatThreads.map((thread) => (
+          {filteredThreads.map((thread) => (
             <Pressable
               key={thread.id}
               style={styles.row}
