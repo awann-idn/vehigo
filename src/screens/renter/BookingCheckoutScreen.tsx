@@ -77,6 +77,7 @@ export default function BookingCheckoutScreen({ navigation, route }: Props) {
         total,
         payment_method: method,
         notes: method === 'Dengan Driver' ? 'Termasuk Layanan Driver' : 'Lepas Kunci',
+        extra_fee: driverFee,
       },
       {
         onSuccess: (order) =>

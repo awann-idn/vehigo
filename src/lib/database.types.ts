@@ -49,6 +49,7 @@ export interface Database {
           p_end_date: string;
           p_payment_method?: string | null;
           p_notes?: string | null;
+          p_extra_fee?: number;
         };
         Returns: Json;
       };

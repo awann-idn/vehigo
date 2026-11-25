@@ -135,6 +135,7 @@ export async function createOrder(payload: {
   total: number;
   payment_method?: string;
   notes?: string;
+  extra_fee?: number;
 }): Promise<Order> {
   try {
     const { data: vehicle, error: vehicleError } = await supabase
@@ -151,10 +152,11 @@ export async function createOrder(payload: {
       p_end_date: payload.end_date,
       p_payment_method: payload.payment_method ?? null,
       p_notes: payload.notes ?? null,
+      p_extra_fee: payload.extra_fee ?? 0,
     });
 
     if (error) {
-      const code = error.message.match(/VEHICLE_[A-Z_]+|AUTH_REQUIRED|INVALID_DATE_RANGE/)?.[0];
+      const code = error.message.match(/VEHICLE_[A-Z_]+|AUTH_REQUIRED|INVALID_DATE_RANGE|INVALID_EXTRA_FEE/)?.[0];
       throw new Error(code ? `Booking ditolak: ${code}` : error.message);
     }
     if (!data) throw new Error('Pesanan tidak berhasil dibuat');
