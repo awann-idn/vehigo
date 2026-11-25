@@ -1,7 +1,6 @@
 import React from 'react';
-import { Image } from 'react-native';
 import { useAuth } from '../../features/auth/useAuth';
-import { Pressable, StyleSheet, Text, View } from 'react-native';
+import { Image, Pressable, StyleSheet, Text, View } from 'react-native';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import {
   Bell,
