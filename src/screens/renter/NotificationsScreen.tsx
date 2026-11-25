@@ -116,7 +116,10 @@ export default function NotificationsScreen({ navigation }: Props) {
           message="Informasi pesanan dan pemberitahuan aktivitas rental akan tampil di sini."
         />
       ) : (
-        grouped.flatMap((group) => group.items).map((item) => {
+        grouped.map((group) => (
+          <View key={group.title} style={styles.group}>
+            <Text style={styles.groupTitle}>{group.title}</Text>
+            {group.items.map((item) => {
           const Icon = toneIcon[item.tone];
           return (
             <Pressable
@@ -148,7 +151,9 @@ export default function NotificationsScreen({ navigation }: Props) {
               </View>
             </Pressable>
           );
-        })
+            })}
+          </View>
+        ))
       )}
     </Screen>
   );
@@ -185,6 +190,15 @@ const styles = StyleSheet.create({
     ...typography.caption,
     color: colors.primary,
     fontWeight: '600',
+  },
+  group: {
+    gap: spacing.md,
+    marginTop: spacing.md,
+  },
+  groupTitle: {
+    ...typography.label,
+    color: colors.text.muted,
+    letterSpacing: 1,
   },
   card: {
     flexDirection: 'row',

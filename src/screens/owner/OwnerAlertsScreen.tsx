@@ -116,7 +116,10 @@ export default function OwnerAlertsScreen({ navigation }: Props) {
         />
       ) : (
         <View style={styles.list}>
-          {grouped.flatMap((group) => group.items).map((item) => {
+          {grouped.map((group) => (
+            <View key={group.title} style={styles.group}>
+              <Text style={styles.groupTitle}>{group.title}</Text>
+              {group.items.map((item) => {
             const Icon = toneIcon[item.tone];
             return (
               <Pressable
@@ -148,7 +151,9 @@ export default function OwnerAlertsScreen({ navigation }: Props) {
                 </View>
               </Pressable>
             );
-          })}
+              })}
+            </View>
+          ))}
         </View>
       )}
     </Screen>
@@ -186,6 +191,15 @@ const styles = StyleSheet.create({
     ...typography.caption,
     color: colors.primary,
     fontWeight: '600',
+  },
+  group: {
+    gap: spacing.md,
+    marginBottom: spacing.md,
+  },
+  groupTitle: {
+    ...typography.label,
+    color: colors.text.muted,
+    letterSpacing: 1,
   },
   list: {
     gap: spacing.md,
