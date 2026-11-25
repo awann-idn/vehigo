@@ -1,4 +1,5 @@
 import React from 'react';
+import { Image, FlatList } from 'react-native';
 import { ActivityIndicator, Pressable, StyleSheet, Text, View } from 'react-native';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { Car, Fuel, Settings2, ShieldCheck, Star, Users } from 'lucide-react-native';
@@ -11,13 +12,14 @@ import { colors } from '../../theme/colors';
 import { spacing } from '../../theme/spacing';
 import { typography } from '../../theme/typography';
 import { formatRupiah } from '../../lib/formatters';
-import { useVehicle } from '../../hooks/useVehicles';
+import { useVehicle, useVehiclePhotos } from '../../hooks/useVehicles';
 import { useReviews } from '../../hooks/useReviews';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'VehicleDetail'>;
 
 export default function VehicleDetailScreen({ navigation, route }: Props) {
   const { data: vehicle, isLoading } = useVehicle(route.params.id);
+  const { data: photos = [] } = useVehiclePhotos(route.params.id);
   const { data: reviews = [] } = useReviews('vehicle', route.params.id);
 
   if (isLoading || !vehicle) {
@@ -34,7 +36,9 @@ export default function VehicleDetailScreen({ navigation, route }: Props) {
       <AppHeader title="Detail Kendaraan" onBack={() => navigation.goBack()} />
 
       <View style={[styles.hero, { backgroundColor: vehicle.tint }]}>
-        <Car size={110} color={colors.primary} strokeWidth={1.2} />
+        {photos.length > 0 ? (
+          <FlatList data={photos.filter((photo) => photo.url)} horizontal pagingEnabled showsHorizontalScrollIndicator={false} keyExtractor={(photo) => photo.id} renderItem={({ item }) => <Image source={{ uri: item.url ?? undefined }} style={styles.heroImage} />} />
+        ) : <Car size={110} color={colors.primary} strokeWidth={1.2} />}
         <View style={styles.heroBadge}>
           <ShieldCheck size={14} color={colors.text.white} />
           <Text style={styles.heroBadgeText}>Verified</Text>
@@ -133,6 +137,11 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     marginBottom: spacing.base,
+  },
+  heroImage: {
+    width: 340,
+    height: 200,
+    resizeMode: 'cover',
   },
   heroBadge: {
     position: 'absolute',

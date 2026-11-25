@@ -4,6 +4,7 @@ import { createDebouncer } from '../lib/debounce';
 import {
   fetchVehicles,
   fetchVehicleById,
+  fetchVehiclePhotos,
   createVehicle,
   updateVehicle,
   updateVehicleStatus,
@@ -76,5 +77,13 @@ export function useUpdateVehicleStatus() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['vehicles'] });
     },
+  });
+}
+
+export function useVehiclePhotos(vehicleId: string) {
+  return useQuery({
+    queryKey: ['vehiclePhotos', vehicleId],
+    queryFn: () => fetchVehiclePhotos(vehicleId),
+    enabled: !!vehicleId,
   });
 }

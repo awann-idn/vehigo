@@ -230,3 +230,19 @@ export async function saveVehiclePhoto(payload: {
   if (error) throw new Error(error.message);
   return data;
 }
+
+export async function fetchVehiclePhotos(vehicleId: string) {
+  const { data, error } = await (supabase as any)
+    .from('vehicle_photos')
+    .select('id, angle, storage_path')
+    .eq('vehicle_id', vehicleId)
+    .order('created_at', { ascending: true });
+  if (error) throw new Error(error.message);
+  const rows = data ?? [];
+  return Promise.all(rows.map(async (row: any) => {
+    const { data: signed } = await supabase.storage
+      .from('vehicle-photos')
+      .createSignedUrl(row.storage_path, 3600);
+    return { id: row.id, angle: row.angle, url: signed?.signedUrl ?? null };
+  }));
+}
