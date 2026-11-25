@@ -1,6 +1,6 @@
 import React from 'react';
 import { ScrollView, StyleSheet, View, ViewStyle } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { colors } from '../theme/colors';
 import { spacing } from '../theme/spacing';
 
@@ -13,11 +13,13 @@ type Props = {
 };
 
 export function Screen({ children, scroll, padded = true, style, contentStyle }: Props) {
+  const insets = useSafeAreaInsets();
+
   if (scroll) {
     return (
-      <SafeAreaView style={[styles.root, style]} edges={['top', 'left', 'right']}>
+      <SafeAreaView style={[styles.root, style]} edges={['left', 'right']}>
         <ScrollView
-          contentContainerStyle={[padded && styles.padded, contentStyle]}
+          contentContainerStyle={[{ paddingTop: insets.top }, padded && styles.padded, contentStyle]}
           showsVerticalScrollIndicator={false}
           keyboardShouldPersistTaps="handled"
         >
@@ -28,8 +30,8 @@ export function Screen({ children, scroll, padded = true, style, contentStyle }:
   }
 
   return (
-    <SafeAreaView style={[styles.root, padded && styles.padded, style]} edges={['top', 'left', 'right']}>
-      <View style={styles.fill}>{children}</View>
+    <SafeAreaView style={[styles.root, padded && styles.padded, style]} edges={['left', 'right']}>
+      <View style={[styles.fill, { paddingTop: insets.top }]}>{children}</View>
     </SafeAreaView>
   );
 }

@@ -272,6 +272,7 @@ function ChecklistRow({ completed, label, number }: { completed: boolean; label:
 const styles = StyleSheet.create({
   topBar: {
     flexDirection: 'row',
+    paddingTop: spacing.md,
     justifyContent: 'space-between',
     alignItems: 'flex-start',
     paddingTop: spacing.sm,
@@ -329,9 +330,10 @@ const styles = StyleSheet.create({
     overflow: 'hidden',
   },
   avatarImage: {
-    width: '100%',
-    height: '100%',
-    borderRadius: 999,
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    alignSelf: 'center',
   },
   avatarText: {
     ...typography.bodySm,

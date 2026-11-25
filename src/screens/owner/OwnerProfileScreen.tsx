@@ -120,9 +120,10 @@ const styles = StyleSheet.create({
     overflow: 'hidden',
   },
   avatarImage: {
-    width: '100%',
-    height: '100%',
-    borderRadius: 999,
+    width: 48,
+    height: 48,
+    borderRadius: 24,
+    alignSelf: 'center',
   },
   avatarText: {
     ...typography.h3,
