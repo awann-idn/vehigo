@@ -18,14 +18,26 @@ import { ListItem } from '../../components/ListItem';
 import { colors } from '../../theme/colors';
 import { spacing } from '../../theme/spacing';
 import { typography } from '../../theme/typography';
+import { useQuery } from '@tanstack/react-query';
+import { fetchMyDocuments } from '../../api/documents';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'RenterApp'>;
 
 export default function RenterProfileScreen({ navigation }: Props) {
   const { user, profile, signOut } = useAuth();
+  const { data: documents = [] } = useQuery({
+    queryKey: ['myDocuments', user?.id],
+    queryFn: () => fetchMyDocuments(user?.id as string),
+    enabled: !!user?.id,
+  });
+  const verifiedCount = documents.filter((doc) => doc.status === 'verified').length;
+  const verificationLabel = documents.length === 0
+    ? 'Belum ada dokumen'
+    : `${verifiedCount}/${documents.length} dokumen terverifikasi`;
+
   return (
     <Screen scroll>
-      <View style={styles.header}>
+      <Pressable style={styles.header} onPress={() => navigation.navigate('RenterProfileEdit')}>
         <View style={styles.avatar}>
           <Text style={styles.avatarText}>{(profile?.full_name || user?.email || 'P').slice(0, 2).toUpperCase()}</Text>
         </View>
@@ -34,7 +46,7 @@ export default function RenterProfileScreen({ navigation }: Props) {
           <Text style={styles.role}>{profile?.role === 'mitra' ? 'Mitra' : 'Penyewa'}</Text>
         </View>
         <ChevronRight size={18} color={colors.text.muted} />
-      </View>
+      </Pressable>
 
       <View style={styles.section}>
         <Text style={styles.sectionTitle}>Akun</Text>
@@ -47,7 +59,7 @@ export default function RenterProfileScreen({ navigation }: Props) {
         <ListItem
           icon={ShieldCheck}
           title="Verifikasi Identitas"
-          subtitle="Unggah KTP & SIM"
+          subtitle={verificationLabel}
           onPress={() => navigation.navigate('RenterVerification')}
         />
         <ListItem
